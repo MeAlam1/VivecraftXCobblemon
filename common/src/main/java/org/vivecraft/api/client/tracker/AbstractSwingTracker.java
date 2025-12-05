@@ -7,6 +7,7 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.vivecraft.api.client.tracker.context.SwingContext;
 import org.vivecraft.api.data.FBTMode;
+import org.vivecraft.api.data.VRBodyPart;
 import org.vivecraft.client_vr.ClientDataHolderVR;
 import org.vivecraft.client_vr.gameplay.trackers.DebugRenderTracker;
 import org.vivecraft.client_vr.provider.MCVR;
@@ -22,105 +23,128 @@ import java.util.List;
  * No Minecraft-specific action is performed here.
  */
 public class AbstractSwingTracker implements DebugRenderTracker {
-    public static final int[] CONTROLLER_AND_FEET = new int[]{
+    public static final int[] TRACKER_DEVICE_INDICES = new int[]{
         MCVR.MAIN_CONTROLLER, MCVR.OFFHAND_CONTROLLER, MCVR.RIGHT_FOOT_TRACKER, MCVR.LEFT_FOOT_TRACKER
     };
 
-    public static final float DEFAULT_SPEED_THRESHOLD = 3.0f;
+    public static final float BASE_SWING_SPEED_THRESHOLD = 3.0f;
 
-    public interface Listener {
-        default void onSwingStart(SwingContext context) {}
+    private static final VRBodyPart[] BODY_PARTS = new VRBodyPart[]{
+        VRBodyPart.MAIN_HAND, VRBodyPart.OFF_HAND, VRBodyPart.RIGHT_FOOT, VRBodyPart.LEFT_FOOT
+    };
 
-        default void onSwingUpdate(SwingContext context) {}
+    private final Minecraft minecraft;
+    private final ClientDataHolderVR clientData;
+    private final List<SwingTracker> swingListeners = new ArrayList<>();
 
-        default void onSwingImpact(SwingContext context) {}
+    private final Vec3[] lastTipPositions = new Vec3[4];
+    private final Vec3[] lastDevicePositions = new Vec3[4];
+    private final Quaternionf[] lastDeviceRotations = new Quaternionf[4];
+    private final boolean[] isSwinging = new boolean[4];
 
-        default void onSwingEnd(int bodyPartIndex) {}
+    public AbstractSwingTracker(Minecraft minecraft, ClientDataHolderVR clientData) {
+        this.minecraft = minecraft;
+        this.clientData = clientData;
     }
 
-    private final Minecraft mc;
-    private final ClientDataHolderVR dh;
-    private final List<Listener> listeners = new ArrayList<>();
-
-    private final Vec3[] lastTip = new Vec3[4];
-    private final Vec3[] lastPos = new Vec3[4];
-    private final Quaternionf[] lastRot = new Quaternionf[4];
-    private final boolean[] active = new boolean[4];
-
-    public AbstractSwingTracker(Minecraft mc, ClientDataHolderVR dh) {
-        this.mc = mc;
-        this.dh = dh;
+    public void addListener(SwingTracker tracker) {
+        if (!swingListeners.contains(tracker)) swingListeners.add(tracker);
     }
 
-    public void addListener(Listener l) {
-        if (!listeners.contains(l)) listeners.add(l);
-    }
-
-    public void removeListener(Listener l) {
-        listeners.remove(l);
+    public void removeListener(SwingTracker tracker) {
+        swingListeners.remove(tracker);
     }
 
 
     public void tick(@Nullable LocalPlayer player) {
-        if (player == null || mc == null || dh == null || dh.vrPlayer == null) return;
+        if (player == null || minecraft == null || clientData == null || clientData.vrPlayer == null) return;
 
-        int trackers = 2;
-        if (dh.vrSettings != null && dh.vrSettings.feetCollision &&
-            dh.vrPlayer.vrdata_world_pre.fbtMode != null &&
-            dh.vrPlayer.vrdata_world_pre.fbtMode != FBTMode.ARMS_ONLY)
+        int trackers = getTrackerCount();
+        for (int tracker = 0; tracker < trackers; tracker++) {
+            processTracker(tracker, player);
+        }
+    }
+
+    private int getTrackerCount() {
+        if (clientData.vrSettings != null && clientData.vrSettings.feetCollision &&
+            clientData.vrPlayer.vrdata_world_pre.fbtMode != null &&
+            clientData.vrPlayer.vrdata_world_pre.fbtMode != FBTMode.ARMS_ONLY)
         {
-            trackers = 4;
+            return 4;
+        }
+        return 2;
+    }
+
+    private void processTracker(int tracker, LocalPlayer player) {
+        int deviceIndex = TRACKER_DEVICE_INDICES[tracker];
+
+        Vec3 handPos = getDevicePosition(deviceIndex);
+        Vector3f handDir = getHandDirection(deviceIndex);
+        if (handPos == null || handDir == null) return;
+
+        Vec3 tip = computeTip(handPos, handDir, 0.3f);
+        Quaternionf rot = getHandRotation(deviceIndex);
+        if (rot == null) return;
+
+        float speed = computeSpeed(tracker, tip);
+        SwingContext context = new SwingContext(BODY_PARTS[tracker], handPos, tip, speed, rot);
+
+        handleSwingState(tracker, player, context);
+
+        lastTipPositions[tracker] = tip;
+        lastDevicePositions[tracker] = handPos;
+        lastDeviceRotations[tracker] = rot;
+    }
+
+    @Nullable
+    private Vec3 getDevicePosition(int deviceIndex) {
+        var device = clientData.vrPlayer.vrdata_world_pre.getDevice(deviceIndex);
+        return device != null ? device.getPosition() : null;
+    }
+
+    @Nullable
+    private Vector3f getHandDirection(int deviceIndex) {
+        var hand = clientData.vrPlayer.vrdata_world_pre.getHand(deviceIndex);
+        return hand != null ? hand.getCustomVector(MathUtils.BACK) : null;
+    }
+
+    @Nullable
+    private Quaternionf getHandRotation(int deviceIndex) {
+        var hand = clientData.vrPlayer.vrdata_world_pre.getHand(deviceIndex);
+        return hand != null ? new Quaternionf().setFromNormalized(hand.getMatrix()) : null;
+    }
+
+    private Vec3 computeTip(Vec3 handPos, Vector3f handDir, float offset) {
+        Vector3f tipOffsetVec = handDir.mul(offset, new Vector3f());
+        return handPos.add(tipOffsetVec.x, tipOffsetVec.y, tipOffsetVec.z);
+    }
+
+    private float computeSpeed(int tracker, Vec3 tip) {
+        Vec3 lastTipVec = lastTipPositions[tracker];
+        if (lastTipVec == null) return 0f;
+        double dist = tip.distanceTo(lastTipVec);
+        return (float) (dist * 20.0);
+    }
+
+    private void handleSwingState(int tracker, LocalPlayer player, SwingContext context) {
+        float startThreshold = BASE_SWING_SPEED_THRESHOLD * (player.isCreative() ? 1.5f : 1.0f) * 0.15f;
+
+        if (!isSwinging[tracker] && context.speed() > startThreshold) {
+            isSwinging[tracker] = true;
+            for (SwingTracker _tracker : this.swingListeners) _tracker.onSwingStart(context);
         }
 
-        for (int i = 0; i < trackers; i++) {
-            int deviceIndex = CONTROLLER_AND_FEET[i];
+        if (isSwinging[tracker]) {
+            for (SwingTracker _tracker : this.swingListeners) _tracker.onSwingUpdate(context);
 
-            Vec3 handPos = dh.vrPlayer.vrdata_world_pre.getDevice(deviceIndex).getPosition();
-
-            Vector3f handDir = dh.vrPlayer.vrdata_world_pre.getHand(deviceIndex)
-                .getCustomVector(MathUtils.BACK);
-
-            float tipOffset = 0.3f;
-            Vector3f tipOffsetVec = handDir.mul(tipOffset, new Vector3f());
-            Vec3 tip = handPos.add(tipOffsetVec.x, tipOffsetVec.y, tipOffsetVec.z);
-
-            Quaternionf rot = new Quaternionf().setFromNormalized(
-                dh.vrPlayer.vrdata_world_pre.getHand(deviceIndex).getMatrix());
-
-            Vec3 lastTipVec = lastTip[i];
-            float speed;
-            if (lastTipVec == null) {
-                speed = 0f;
-            } else {
-                double dist = tip.distanceTo(lastTipVec);
-                speed = (float) (dist * 20.0);
+            if (context.speed() > BASE_SWING_SPEED_THRESHOLD) {
+                for (SwingTracker _tracker : this.swingListeners) _tracker.onSwingImpact(context);
             }
+        }
 
-            SwingContext context = new SwingContext(i, handPos, tip, speed, rot);
-
-            float startThreshold = DEFAULT_SPEED_THRESHOLD * (player.isCreative() ? 1.5f : 1.0f) * 0.15f;
-            float impactThreshold = DEFAULT_SPEED_THRESHOLD;
-            if (!active[i] && context.speed() > startThreshold) {
-                active[i] = true;
-                for (Listener l : listeners) l.onSwingStart(context);
-            }
-
-            if (active[i]) {
-                for (Listener l : listeners) l.onSwingUpdate(context);
-
-                if (context.speed() > impactThreshold) {
-                    for (Listener l : listeners) l.onSwingImpact(context);
-                }
-            }
-
-            if (active[i] && context.speed() <= startThreshold) {
-                active[i] = false;
-                for (Listener l : listeners) l.onSwingEnd(i);
-            }
-
-            lastTip[i] = tip;
-            lastPos[i] = handPos;
-            lastRot[i] = rot;
+        if (isSwinging[tracker] && context.speed() <= startThreshold) {
+            isSwinging[tracker] = false;
+            for (SwingTracker _tracker : this.swingListeners) _tracker.onSwingEnd(context);
         }
     }
 
@@ -132,19 +156,19 @@ public class AbstractSwingTracker implements DebugRenderTracker {
 
     @Override
     public boolean isActive(@Nullable LocalPlayer player) {
-        if (player == null || mc == null || dh == null || dh.vrPlayer == null) return false;
-        if (mc.gameMode == null) return false;
+        if (player == null || minecraft == null || clientData == null || clientData.vrPlayer == null) return false;
+        if (minecraft.gameMode == null) return false;
         if (!player.isAlive() || player.isSleeping()) return false;
-        if (mc.screen != null) return false;
-        if (dh.vrSettings == null) return false;
-        if (dh.vrSettings.weaponCollision == VRSettings.WeaponCollision.OFF) {
+        if (minecraft.screen != null) return false;
+        if (clientData.vrSettings == null) return false;
+        if (clientData.vrSettings.weaponCollision == VRSettings.WeaponCollision.OFF) {
             return false;
         }
-        if (dh.vrSettings.weaponCollision == VRSettings.WeaponCollision.AUTO &&
+        if (clientData.vrSettings.weaponCollision == VRSettings.WeaponCollision.AUTO &&
             player.isCreative())
         {return false;}
-        if (dh.vrSettings.seated) return false;
-        return dh.jumpTracker == null || !dh.jumpTracker.isjumping();
+        if (clientData.vrSettings.seated) return false;
+        return clientData.jumpTracker == null || !clientData.jumpTracker.isjumping();
     }
 
     @Override
@@ -159,10 +183,10 @@ public class AbstractSwingTracker implements DebugRenderTracker {
     @Override
     public void inactiveProcess(@Nullable LocalPlayer player) {
         for (int i = 0; i < 4; i++) {
-            lastTip[i] = null;
-            lastPos[i] = null;
-            lastRot[i] = null;
-            active[i] = false;
+            lastTipPositions[i] = null;
+            lastDevicePositions[i] = null;
+            lastDeviceRotations[i] = null;
+            isSwinging[i] = false;
         }
     }
 

@@ -226,7 +226,7 @@ public class MathUtils {
      * the returned Vector3f has pitch in X, yaw in Y and roll in Z
      *
      * @param rot quaternion to get the euler angles for
-     * @return Euler angles for the given {@code rot}
+     * @return Euler angles for the given {@code rotation}
      */
     public static Vector3f getEulerAnglesYZX(Quaternionf rot) {
         return new Vector3f((float) Math.asin(-2.0F * (rot.y * rot.z - rot.w * rot.x)),

@@ -1,4 +1,3 @@
-
 package org.vivecraft.client_vr.gameplay.trackers;
 
 import net.minecraft.client.Minecraft;
@@ -24,6 +23,7 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
 import org.vivecraft.api.client.Tracker;
 import org.vivecraft.api.client.tracker.AbstractSwingTracker;
+import org.vivecraft.api.client.tracker.SwingTracker;
 import org.vivecraft.api.client.tracker.context.SwingContext;
 import org.vivecraft.api.data.VRBodyPart;
 import org.vivecraft.api.utils.VRItemUtils;
@@ -44,8 +44,8 @@ import java.util.List;
  * Vanilla adapter: listens to GeneralSwingTracker and applies vanilla behaviour.
  * Now implements Tracker so it can be registered and will attach/detach to the detector at runtime.
  */
-public class VanillaSwingTracker implements AbstractSwingTracker.Listener, DebugRenderTracker {
-    private static final int[] CONTROLLER_AND_FEET = AbstractSwingTracker.CONTROLLER_AND_FEET;
+public class VanillaSwingTracker implements SwingTracker, DebugRenderTracker {
+    private static final int[] CONTROLLER_AND_FEET = AbstractSwingTracker.TRACKER_DEVICE_INDICES;
     private static final VRBodyPart[] BODYPARTS = new VRBodyPart[]{
         VRBodyPart.MAIN_HAND, VRBodyPart.OFF_HAND, VRBodyPart.RIGHT_FOOT, VRBodyPart.LEFT_FOOT
     };
@@ -93,10 +93,17 @@ public class VanillaSwingTracker implements AbstractSwingTracker.Listener, Debug
     }
 
     @Override
-    public void onSwingEnd(int bodyPartIndex) {
-        if (bodyPartIndex >= 0 && bodyPartIndex < lastWeaponSolid.length) {
-            lastWeaponSolid[bodyPartIndex] = false;
-            lastHitEntities[bodyPartIndex] = Collections.emptyList();
+    public void onSwingEnd(SwingContext context) {
+        int i = -1;
+        for (int idx = 0; idx < BODYPARTS.length; idx++) {
+            if (BODYPARTS[idx] == context.bodyPart()) {
+                i = idx;
+                break;
+            }
+        }
+        if (i >= 0 && i < lastWeaponSolid.length) {
+            lastWeaponSolid[i] = false;
+            lastHitEntities[i] = Collections.emptyList();
         }
     }
 
@@ -105,7 +112,16 @@ public class VanillaSwingTracker implements AbstractSwingTracker.Listener, Debug
         LocalPlayer player = mc.player;
         if (player == null) return;
 
-        int i = context.bodyPartIndex();
+        VRBodyPart bodyPart = context.bodyPart();
+        int i = -1;
+        for (int idx = 0; idx < BODYPARTS.length; idx++) {
+            if (BODYPARTS[idx] == bodyPart) {
+                i = idx;
+                break;
+            }
+        }
+        if (i < 0) return;
+
         int device = CONTROLLER_AND_FEET[i];
         boolean isHand = i < 2;
 
