@@ -53,7 +53,7 @@ public class VanillaSwingTracker implements SwingTracker, DebugRenderTracker {
 
     private final Minecraft mc;
     private final ClientDataHolderVR dh;
-    private AbstractSwingTracker general;
+    private AbstractSwingTracker swingTracker;
     private final boolean[] lastWeaponSolid = new boolean[4];
     private final List<Entity>[] lastHitEntities = new List[]{
         Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), Collections.emptyList()
@@ -70,17 +70,17 @@ public class VanillaSwingTracker implements SwingTracker, DebugRenderTracker {
 
 
     public void attach(AbstractSwingTracker general) {
-        if (this.general == general) return;
-        if (this.general != null) this.general.removeListener(this);
-        this.general = general;
-        if (this.general != null) this.general.addListener(this);
+        if (this.swingTracker == general) return;
+        if (this.swingTracker != null) this.swingTracker.removeListener(this);
+        this.swingTracker = general;
+        if (this.swingTracker != null) this.swingTracker.addListener(this);
     }
 
 
     public void detach() {
-        if (this.general != null) {
-            this.general.removeListener(this);
-            this.general = null;
+        if (this.swingTracker != null) {
+            this.swingTracker.removeListener(this);
+            this.swingTracker = null;
         }
     }
 
@@ -356,7 +356,7 @@ public class VanillaSwingTracker implements SwingTracker, DebugRenderTracker {
 
     @Override
     public void activeProcess(@Nullable LocalPlayer player) {
-        if (this.general == null && this.dh != null) {
+        if (this.swingTracker == null && this.dh != null) {
             for (Tracker t : this.dh.getTrackers()) {
                 if (t instanceof AbstractSwingTracker gs) {
                     attach(gs);
