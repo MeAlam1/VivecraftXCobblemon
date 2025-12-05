@@ -22,9 +22,10 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
 import org.vivecraft.api.client.Tracker;
-import org.vivecraft.api.client.tracker.AbstractSwingTracker;
-import org.vivecraft.api.client.tracker.SwingTracker;
-import org.vivecraft.api.client.tracker.context.SwingContext;
+import org.vivecraft.api.client.tracker.swing.AbstractSwingTracker;
+import org.vivecraft.api.client.tracker.swing.SwingSource;
+import org.vivecraft.api.client.tracker.swing.SwingTracker;
+import org.vivecraft.api.client.tracker.swing.SwingContext;
 import org.vivecraft.api.data.VRBodyPart;
 import org.vivecraft.api.utils.VRItemUtils;
 import org.vivecraft.client.network.ClientNetworking;
@@ -53,13 +54,13 @@ public class VanillaSwingTracker implements SwingTracker, DebugRenderTracker {
 
     private final Minecraft mc;
     private final ClientDataHolderVR dh;
-    private AbstractSwingTracker swingTracker;
     private final boolean[] lastWeaponSolid = new boolean[4];
     private final List<Entity>[] lastHitEntities = new List[]{
         Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), Collections.emptyList()
     };
     private final Vec3[] lastBlockHit = new Vec3[4];
     private final AABB[] lastAttackAABB = new AABB[4];
+    private SwingSource swingSource;
 
     private int disableSwing = 3;
 
@@ -68,19 +69,17 @@ public class VanillaSwingTracker implements SwingTracker, DebugRenderTracker {
         this.dh = dh;
     }
 
-
-    public void attach(AbstractSwingTracker tracker) {
-        if (this.swingTracker == tracker) return;
-        if (this.swingTracker != null) this.swingTracker.removeListener(this);
-        this.swingTracker = tracker;
-        if (this.swingTracker != null) this.swingTracker.addListener(this);
+    public void attach(SwingSource source) {
+        if (this.swingSource == source) return;
+        if (this.swingSource != null) this.swingSource.removeListener(this);
+        this.swingSource = source;
+        if (this.swingSource != null) this.swingSource.addListener(this);
     }
 
-
     public void detach() {
-        if (this.swingTracker != null) {
-            this.swingTracker.removeListener(this);
-            this.swingTracker = null;
+        if (this.swingSource != null) {
+            this.swingSource.removeListener(this);
+            this.swingSource = null;
         }
     }
 
@@ -356,10 +355,10 @@ public class VanillaSwingTracker implements SwingTracker, DebugRenderTracker {
 
     @Override
     public void activeProcess(@Nullable LocalPlayer player) {
-        if (this.swingTracker == null && this.dh != null) {
+        if (this.swingSource == null && this.dh != null) {
             for (Tracker t : this.dh.getTrackers()) {
-                if (t instanceof AbstractSwingTracker gs) {
-                    attach(gs);
+                if (t instanceof SwingSource src) {
+                    attach(src);
                     break;
                 }
             }

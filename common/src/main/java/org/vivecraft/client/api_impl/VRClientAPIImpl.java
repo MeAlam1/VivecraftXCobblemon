@@ -1,10 +1,12 @@
 package org.vivecraft.client.api_impl;
 
 import net.minecraft.world.phys.Vec3;
+import org.vivecraft.api.client.Tracker;
 import org.vivecraft.api.client.VRClientAPI;
 import org.vivecraft.api.client.data.CloseKeyboardContext;
 import org.vivecraft.api.client.data.OpenKeyboardContext;
 import org.vivecraft.api.client.event.VivecraftClientRegistrationEvent;
+import org.vivecraft.api.client.tracker.TrackerSource;
 import org.vivecraft.api.data.FBTMode;
 import org.vivecraft.api.data.VRBodyPart;
 import org.vivecraft.api.data.VRPose;
@@ -55,6 +57,22 @@ public final class VRClientAPIImpl implements VRClientAPI {
             }
             this.registrationHandlers.add(handler);
         }
+    }
+
+    @Override
+    public <T extends TrackerSource> T getTrackerSource(Class<T> sourceClass) {
+        if (sourceClass == null) return null;
+
+        ClientDataHolderVR dh = ClientDataHolderVR.getInstance();
+        if (dh == null) return null;
+
+        for (Tracker tracker : dh.getTrackers()) {
+            if (sourceClass.isInstance(tracker)) {
+                return sourceClass.cast(tracker);
+            }
+        }
+
+        return null;
     }
 
     @Override

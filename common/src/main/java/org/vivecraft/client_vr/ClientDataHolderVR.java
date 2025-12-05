@@ -9,7 +9,7 @@ import net.minecraft.world.entity.HumanoidArm;
 import org.vivecraft.api.client.ItemInUseTracker;
 import org.vivecraft.api.client.Tracker;
 import org.vivecraft.api.client.data.RenderPass;
-import org.vivecraft.api.client.tracker.AbstractSwingTracker;
+import org.vivecraft.api.client.tracker.swing.AbstractSwingTracker;
 import org.vivecraft.client_vr.extensions.PostChainExtension;
 import org.vivecraft.client_vr.gameplay.VRPlayer;
 import org.vivecraft.client_vr.gameplay.interact_modules.*;

@@ -4,6 +4,7 @@ import org.vivecraft.api.VRAPI;
 import org.vivecraft.api.client.data.CloseKeyboardContext;
 import org.vivecraft.api.client.data.OpenKeyboardContext;
 import org.vivecraft.api.client.event.VivecraftClientRegistrationEvent;
+import org.vivecraft.api.client.tracker.TrackerSource;
 import org.vivecraft.api.data.FBTMode;
 import org.vivecraft.api.data.VRBodyPart;
 import org.vivecraft.api.data.VRPose;
@@ -43,6 +44,20 @@ public interface VRClientAPI {
      * @since 1.3.0
      */
     void addClientRegistrationHandler(Consumer<VivecraftClientRegistrationEvent> handler) throws IllegalStateException;
+
+    /**
+     * Look up a registered {@link TrackerSource} implementation by its class.
+     *
+     * <p>Returns the first registered source that is an instance of {@code sourceClass}, or {@code null} if none
+     * was found.
+     *
+     * @param sourceClass class object for the requested TrackerSource
+     * @param <T>         concrete TrackerSource type
+     * @return an instance of {@code T} if available, otherwise {@code null}
+     */
+    @Nullable
+    <T extends TrackerSource> T getTrackerSource(Class<T> sourceClass);
+
 
     /**
      * Get whether VR support is currently initialized. This is NOT the same as whether the local player is actively in

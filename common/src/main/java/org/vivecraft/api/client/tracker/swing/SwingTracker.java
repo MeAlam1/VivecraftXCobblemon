@@ -1,6 +1,4 @@
-package org.vivecraft.api.client.tracker;
-
-import org.vivecraft.api.client.tracker.context.SwingContext;
+package org.vivecraft.api.client.tracker.swing;
 
 /**
  * Listener for swing lifecycle events.
