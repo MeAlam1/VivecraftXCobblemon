@@ -41,6 +41,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
+ * TODO: Cleanup like ive done with {@link AbstractSwingTracker}
  * Vanilla adapter: listens to GeneralSwingTracker and applies vanilla behaviour.
  * Now implements Tracker so it can be registered and will attach/detach to the detector at runtime.
  */
