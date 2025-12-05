@@ -69,10 +69,10 @@ public class VanillaSwingTracker implements SwingTracker, DebugRenderTracker {
     }
 
 
-    public void attach(AbstractSwingTracker general) {
-        if (this.swingTracker == general) return;
+    public void attach(AbstractSwingTracker tracker) {
+        if (this.swingTracker == tracker) return;
         if (this.swingTracker != null) this.swingTracker.removeListener(this);
-        this.swingTracker = general;
+        this.swingTracker = tracker;
         if (this.swingTracker != null) this.swingTracker.addListener(this);
     }
 
