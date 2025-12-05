@@ -9,6 +9,7 @@ import net.minecraft.world.entity.HumanoidArm;
 import org.vivecraft.api.client.ItemInUseTracker;
 import org.vivecraft.api.client.Tracker;
 import org.vivecraft.api.client.data.RenderPass;
+import org.vivecraft.api.client.tracker.AbstractSwingTracker;
 import org.vivecraft.client_vr.extensions.PostChainExtension;
 import org.vivecraft.client_vr.gameplay.VRPlayer;
 import org.vivecraft.client_vr.gameplay.interact_modules.*;
@@ -70,6 +71,9 @@ public class ClientDataHolderVR {
     public final TelescopeTracker telescopeTracker;
     public final VehicleTracker vehicleTracker;
     public final HapticTracker hapticTracker;
+
+    public final AbstractSwingTracker abstractSwingTracker;
+    public final VanillaSwingTracker vanillaSwingTracker;
 
     // our interact modules
     public final InteractiveHotbarModule hotbarModule;
@@ -141,6 +145,9 @@ public class ClientDataHolderVR {
         this.telescopeTracker = createTracker(TelescopeTracker::new);
         this.vehicleTracker = createTracker(VehicleTracker::new);
         this.hapticTracker = createTracker(HapticTracker::new);
+
+        this.vanillaSwingTracker = createTracker(VanillaSwingTracker::new);
+        this.abstractSwingTracker = createTracker(AbstractSwingTracker::new);
 
         // create interact modules
         this.hotbarModule = new InteractiveHotbarModule(Minecraft.getInstance(), this);

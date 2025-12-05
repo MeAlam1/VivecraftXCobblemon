@@ -27,6 +27,7 @@ import org.joml.Vector3f;
 import org.joml.Vector3fc;
 import org.vivecraft.api.data.FBTMode;
 import org.vivecraft.api.data.VRBodyPart;
+import org.vivecraft.api.utils.VRItemUtils;
 import org.vivecraft.client.VivecraftVRMod;
 import org.vivecraft.client.network.ClientNetworking;
 import org.vivecraft.client_vr.ClientDataHolderVR;
@@ -47,6 +48,11 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
+
+/**
+ * TODO: Remove this File,
+ * The file is currently Disabled and only present for reference.
+ */
 public class SwingTracker implements DebugRenderTracker {
     private static final int[] CONTROLLER_AND_FEET = new int[]{MCVR.MAIN_CONTROLLER, MCVR.OFFHAND_CONTROLLER, MCVR.RIGHT_FOOT_TRACKER, MCVR.LEFT_FOOT_TRACKER};
     private static final VRBodyPart[] BODYPARTS = new VRBodyPart[]{VRBodyPart.MAIN_HAND, VRBodyPart.OFF_HAND, VRBodyPart.RIGHT_FOOT, VRBodyPart.LEFT_FOOT};
@@ -84,7 +90,8 @@ public class SwingTracker implements DebugRenderTracker {
 
     @Override
     public boolean isActive(LocalPlayer player) {
-        if (this.disableSwing > 0) {
+        return false;
+        /*if (this.disableSwing > 0) {
             this.disableSwing--;
             return false;
         } else if (this.mc.gameMode == null) {
@@ -111,38 +118,7 @@ public class SwingTracker implements DebugRenderTracker {
             return false; // don't hit things while blocking.
         } else {
             return !this.dh.jumpTracker.isjumping();
-        }
-    }
-
-    /**
-     * @param itemStack ItemStack to check
-     * @return if the given {@code itemStack} is a Tool
-     */
-    public static boolean isTool(ItemStack itemStack) {
-        return isToolItem(itemStack.getItem()) ||
-            itemStack.is(ViveItemTags.VIVECRAFT_TOOLS) ||
-            // also check the vanilla tags, when on a server without vivecraft
-            itemStack.is(ItemTags.PICKAXES) ||
-            itemStack.is(ItemTags.AXES) ||
-            itemStack.is(ItemTags.SHOVELS) ||
-            itemStack.is(ItemTags.HOES);
-    }
-
-    private static boolean isToolItem(Item item) {
-        return item instanceof DiggerItem ||
-            item instanceof ArrowItem ||
-            item instanceof FishingRodItem ||
-            item instanceof FoodOnAStickItem ||
-            item instanceof ShearsItem ||
-            item == Items.BONE ||
-            item == Items.BLAZE_ROD ||
-            item == Items.BAMBOO ||
-            item == Items.TORCH ||
-            item == Items.REDSTONE_TORCH ||
-            item == Items.STICK ||
-            item == Items.DEBUG_STICK ||
-            item instanceof FlintAndSteelItem ||
-            item instanceof BrushItem;
+        }*/
     }
 
     @Override
@@ -198,7 +174,7 @@ public class SwingTracker implements DebugRenderTracker {
                 if (!(item instanceof SwordItem || itemstack.is(ViveItemTags.VIVECRAFT_SWORDS)) &&
                     !(item instanceof TridentItem || itemstack.is(ViveItemTags.VIVECRAFT_SPEARS)))
                 {
-                    if (isTool(itemstack)) {
+                    if (VRItemUtils.isTool(itemstack)) {
                         isTool = true;
                     }
                 } else {
@@ -599,45 +575,6 @@ public class SwingTracker implements DebugRenderTracker {
             return !open && direction.getAxis() == facing.getAxis();
         }
         return false;
-    }
-
-    /**
-     * @param player    Player that is holding the item
-     * @param itemStack held item
-     * @return the transparency for held items to indicate attack power or sneaking.
-     */
-    public static float getItemFade(LocalPlayer player, ItemStack itemStack) {
-        float fade = player.getAttackStrengthScale(0.0F) * 0.75F + 0.25F;
-
-        if (player.isShiftKeyDown()) {
-            fade = 0.75F;
-        }
-
-        if (ClientDataHolderVR.getInstance().swingTracker.lastWeaponSolid[ClientDataHolderVR.getInstance().isMainHand ?
-            0 : 1])
-        {
-            fade -= 0.25F;
-        }
-
-        if (itemStack != ItemStack.EMPTY) {
-            if (player.isBlocking() && player.getUseItem() != itemStack) {
-                fade -= 0.25F;
-            }
-
-            if (itemStack.getItem() == Items.SHIELD && !player.isBlocking()) {
-                fade -= 0.25F;
-            }
-        }
-
-        if ((double) fade < 0.1D) {
-            fade = 0.1F;
-        }
-
-        if (fade > 1.0F) {
-            fade = 1.0F;
-        }
-
-        return fade;
     }
 
     @Override

@@ -16,10 +16,10 @@ import net.minecraft.world.level.block.Block;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
+import org.vivecraft.api.utils.VRItemUtils;
 import org.vivecraft.client.network.ClientNetworking;
 import org.vivecraft.client_vr.ClientDataHolderVR;
 import org.vivecraft.client_vr.gameplay.trackers.ClimbTracker;
-import org.vivecraft.client_vr.gameplay.trackers.SwingTracker;
 import org.vivecraft.client_vr.gameplay.trackers.TelescopeTracker;
 import org.vivecraft.common.utils.MathUtils;
 import org.vivecraft.data.ViveItemTags;
@@ -89,7 +89,7 @@ public class VivecraftItemRendering {
             itemStack.is(ViveItemTags.VIVECRAFT_COMPASSES))
         {
             itemTransformType = VivecraftItemTransformType.COMPASS;
-        } else if (SwingTracker.isTool(itemStack)) {
+        } else if (VRItemUtils.isTool(itemStack)) {
             itemTransformType = VivecraftItemTransformType.TOOL;
 
             if (item instanceof FoodOnAStickItem || item instanceof FishingRodItem ||

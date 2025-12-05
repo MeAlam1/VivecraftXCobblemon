@@ -15,7 +15,7 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FastColor;
 import net.minecraft.world.item.ItemStack;
-import org.vivecraft.client_vr.gameplay.trackers.SwingTracker;
+import org.vivecraft.api.utils.VRItemUtils;
 import org.vivecraft.client_vr.provider.ControllerType;
 
 public class VRArmRenderer extends PlayerRenderer {
@@ -73,7 +73,7 @@ public class VRArmRenderer extends PlayerRenderer {
         // make sure they have the same state
         rendererArmwear.copyFrom(rendererArm);
 
-        float alpha = SwingTracker.getItemFade((LocalPlayer) player, ItemStack.EMPTY);
+        float alpha = VRItemUtils.getItemFade((LocalPlayer) player, ItemStack.EMPTY);
         ResourceLocation playerSkin = this.getTextureLocation(player);
 
         // render hand
