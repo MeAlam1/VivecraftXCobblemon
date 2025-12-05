@@ -1,10 +1,13 @@
-package org.vivecraft.api.client.tracker.swing;
+package org.vivecraft.client_vr.gameplay.sources;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
+import org.vivecraft.api.client.tracker.swing.SwingContext;
+import org.vivecraft.api.client.tracker.swing.SwingSource;
+import org.vivecraft.api.client.tracker.swing.SwingTracker;
 import org.vivecraft.api.data.FBTMode;
 import org.vivecraft.api.data.VRBodyPart;
 import org.vivecraft.client_vr.ClientDataHolderVR;
@@ -32,7 +35,7 @@ import java.util.*;
  *   <li>The tracker is designed to be polled once per client tick (see {@link #processType}).</li>
  * </ul>
  */
-public class AbstractSwingTracker implements DebugRenderTracker, SwingSource {
+public class AbstractSwingSource implements DebugRenderTracker, SwingSource {
     /**
      * Default speed threshold (m/s) used to determine an impact on a swing.
      * This value is scaled by game state (creative) and hand bias when applied.
@@ -94,7 +97,7 @@ public class AbstractSwingTracker implements DebugRenderTracker, SwingSource {
      * @param minecraft  Minecraft client instance.
      * @param clientData Client-side VR state holder providing device poses and settings.
      */
-    public AbstractSwingTracker(Minecraft minecraft, ClientDataHolderVR clientData) {
+    public AbstractSwingSource(Minecraft minecraft, ClientDataHolderVR clientData) {
         this.minecraft = minecraft;
         this.clientData = clientData;
 

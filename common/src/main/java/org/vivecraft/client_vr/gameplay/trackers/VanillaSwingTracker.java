@@ -22,7 +22,7 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
 import org.vivecraft.api.client.Tracker;
-import org.vivecraft.api.client.tracker.swing.AbstractSwingTracker;
+import org.vivecraft.client_vr.gameplay.sources.AbstractSwingSource;
 import org.vivecraft.api.client.tracker.swing.SwingSource;
 import org.vivecraft.api.client.tracker.swing.SwingTracker;
 import org.vivecraft.api.client.tracker.swing.SwingContext;
@@ -42,7 +42,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * TODO: Cleanup like ive done with {@link AbstractSwingTracker}
+ * TODO: Cleanup like ive done with {@link AbstractSwingSource}
  * Vanilla adapter: listens to GeneralSwingTracker and applies vanilla behaviour.
  * Now implements Tracker so it can be registered and will attach/detach to the detector at runtime.
  */
