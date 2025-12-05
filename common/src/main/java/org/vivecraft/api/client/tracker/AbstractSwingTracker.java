@@ -457,7 +457,7 @@ public class AbstractSwingTracker implements DebugRenderTracker {
      * This method clears per-body-part transient state so that stale data does not cause false swing detections
      * when the tracker next becomes active.
      *
-     * @param player the local player (may be null)
+     * @param player the local player
      */
     @Override
     public void inactiveProcess(@Nullable LocalPlayer player) {
