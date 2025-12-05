@@ -337,14 +337,9 @@ public class AbstractSwingSource implements DebugRenderTracker, SwingSource {
 
 
             if (context.speed() > BASE_SWING_SPEED_THRESHOLD) {
-                if (!shouldSuppressImpact(bodyPart, context)) {
-                    VRSettings.LOGGER.info("{} swing vec={}", bodyPart, context.direction());
+                VRSettings.LOGGER.info("{} swing vec={}", bodyPart, context.direction());
 
-                    for (SwingTracker _tracker : this.swingListeners) _tracker.onSwingImpact(context);
-                } else {
-                    VRSettings.LOGGER.debug("Suppressed impact for {} (speed {}) due to higher-priority swing",
-                        bodyPart, context.speed());
-                }
+                for (SwingTracker _tracker : this.swingListeners) _tracker.onSwingImpact(context);
             }
         }
 
@@ -355,37 +350,6 @@ public class AbstractSwingSource implements DebugRenderTracker, SwingSource {
             state.tipSamples = 0;
             for (SwingTracker _tracker : this.swingListeners) _tracker.onSwingEnd(context);
         }
-    }
-
-    /**
-     * TODO: REMOVE
-     */
-    private boolean shouldSuppressImpact(VRBodyPart bodyPart, SwingContext context) {
-
-        if (bodyPart == VRBodyPart.MAIN_HAND) return false;
-
-        float mySpeed = context.speed();
-
-        for (Map.Entry<VRBodyPart, TrackerState> e : trackerStates.entrySet()) {
-            VRBodyPart otherPart = e.getKey();
-            TrackerState otherState = e.getValue();
-            if (otherPart == bodyPart || otherState == null) continue;
-            if (!otherState.isSwinging) continue;
-
-            float otherSpeed = otherState.lastSpeed;
-
-
-            if (otherPart == VRBodyPart.MAIN_HAND && otherSpeed >= mySpeed * 0.8f) {
-                return true;
-            }
-
-
-            if (otherSpeed > mySpeed + 0.6f) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     /**
