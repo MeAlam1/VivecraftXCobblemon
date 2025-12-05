@@ -186,7 +186,7 @@ public class ClientDataHolderVR {
      * @param <T>         Class of the tracker
      * @return created tracker instance
      */
-    private <T extends Tracker> T createTracker(BiFunction<Minecraft, ClientDataHolderVR, T> constructor) {
+    public <T extends Tracker> T createTracker(BiFunction<Minecraft, ClientDataHolderVR, T> constructor) {
         T tracker = constructor.apply(Minecraft.getInstance(), this);
         registerTracker(tracker);
         return tracker;
