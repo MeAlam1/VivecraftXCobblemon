@@ -10,41 +10,43 @@ import org.vivecraft.api.data.FBTMode;
 import org.vivecraft.api.data.VRBodyPart;
 import org.vivecraft.client_vr.ClientDataHolderVR;
 import org.vivecraft.client_vr.gameplay.trackers.DebugRenderTracker;
-import org.vivecraft.client_vr.provider.MCVR;
 import org.vivecraft.client_vr.settings.VRSettings;
 import org.vivecraft.common.utils.MathUtils;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Pure tracking component. Detects swings based on device/tip velocity and emits events.
  * No Minecraft-specific action is performed here.
  */
 public class AbstractSwingTracker implements DebugRenderTracker {
-    public static final int[] TRACKER_DEVICE_INDICES = new int[]{
-        MCVR.MAIN_CONTROLLER, MCVR.OFFHAND_CONTROLLER, MCVR.RIGHT_FOOT_TRACKER, MCVR.LEFT_FOOT_TRACKER
-    };
-
     public static final float BASE_SWING_SPEED_THRESHOLD = 3.0f;
-
-    private static final VRBodyPart[] BODY_PARTS = new VRBodyPart[]{
-        VRBodyPart.MAIN_HAND, VRBodyPart.OFF_HAND, VRBodyPart.RIGHT_FOOT, VRBodyPart.LEFT_FOOT
-    };
 
     private final Minecraft minecraft;
     private final ClientDataHolderVR clientData;
     private final List<SwingTracker> swingListeners = new ArrayList<>();
 
-    private final Vec3[] lastTipPositions = new Vec3[4];
-    private final Vec3[] lastDevicePositions = new Vec3[4];
-    private final Quaternionf[] lastDeviceRotations = new Quaternionf[4];
-    private final boolean[] isSwinging = new boolean[4];
+    private static class TrackerState {
+        Vec3 lastTipPosition;
+        Vec3 lastDevicePosition;
+        Quaternionf lastDeviceRotation;
+        boolean isSwinging;
+    }
+
+    private final Map<VRBodyPart, TrackerState> trackerStates = new EnumMap<>(VRBodyPart.class);
 
     public AbstractSwingTracker(Minecraft minecraft, ClientDataHolderVR clientData) {
         this.minecraft = minecraft;
         this.clientData = clientData;
+
+        trackerStates.put(VRBodyPart.MAIN_HAND, new TrackerState());
+        trackerStates.put(VRBodyPart.OFF_HAND, new TrackerState());
+        trackerStates.put(VRBodyPart.RIGHT_FOOT, new TrackerState());
+        trackerStates.put(VRBodyPart.LEFT_FOOT, new TrackerState());
     }
 
     public void addListener(SwingTracker tracker) {
@@ -55,63 +57,46 @@ public class AbstractSwingTracker implements DebugRenderTracker {
         swingListeners.remove(tracker);
     }
 
-
     public void tick(@Nullable LocalPlayer player) {
         if (player == null || minecraft == null || clientData == null || clientData.vrPlayer == null) return;
 
-        int trackers = getTrackerCount();
-        for (int tracker = 0; tracker < trackers; tracker++) {
-            processTracker(tracker, player);
+        for (VRBodyPart bodyPart : getTrackedBodyParts()) {
+            processTracker(bodyPart, player);
         }
     }
 
-    private int getTrackerCount() {
+    private List<VRBodyPart> getTrackedBodyParts() {
         if (clientData.vrSettings != null && clientData.vrSettings.feetCollision &&
             clientData.vrPlayer.vrdata_world_pre.fbtMode != null &&
             clientData.vrPlayer.vrdata_world_pre.fbtMode != FBTMode.ARMS_ONLY)
         {
-            return 4;
+            return List.of(VRBodyPart.MAIN_HAND, VRBodyPart.OFF_HAND, VRBodyPart.RIGHT_FOOT, VRBodyPart.LEFT_FOOT);
         }
-        return 2;
+        return List.of(VRBodyPart.MAIN_HAND, VRBodyPart.OFF_HAND);
     }
 
-    private void processTracker(int tracker, LocalPlayer player) {
-        int deviceIndex = TRACKER_DEVICE_INDICES[tracker];
+    private void processTracker(VRBodyPart bodyPart, LocalPlayer player) {
+        var devicePose = clientData.vrPlayer.vrdata_world_pre.getBodyPart(bodyPart);
+        if (devicePose == null) return;
 
-        Vec3 handPos = getDevicePosition(deviceIndex);
-        Vector3f handDir = getHandDirection(deviceIndex);
+        Vec3 handPos = devicePose.getPosition();
+        Vector3f handDir = devicePose.getCustomVector(MathUtils.BACK);
         if (handPos == null || handDir == null) return;
 
         Vec3 tip = computeTip(handPos, handDir, 0.3f);
-        Quaternionf rot = getHandRotation(deviceIndex);
-        if (rot == null) return;
+        Quaternionf rot = new Quaternionf().setFromNormalized(devicePose.getMatrix());
 
-        float speed = computeSpeed(tracker, tip);
-        SwingContext context = new SwingContext(BODY_PARTS[tracker], handPos, tip, speed, rot);
+        float speed = computeSpeed(bodyPart, tip);
+        SwingContext context = new SwingContext(bodyPart, handPos, tip, speed, rot);
 
-        handleSwingState(tracker, player, context);
+        handleSwingState(bodyPart, player, context);
 
-        lastTipPositions[tracker] = tip;
-        lastDevicePositions[tracker] = handPos;
-        lastDeviceRotations[tracker] = rot;
-    }
-
-    @Nullable
-    private Vec3 getDevicePosition(int deviceIndex) {
-        var device = clientData.vrPlayer.vrdata_world_pre.getDevice(deviceIndex);
-        return device != null ? device.getPosition() : null;
-    }
-
-    @Nullable
-    private Vector3f getHandDirection(int deviceIndex) {
-        var hand = clientData.vrPlayer.vrdata_world_pre.getHand(deviceIndex);
-        return hand != null ? hand.getCustomVector(MathUtils.BACK) : null;
-    }
-
-    @Nullable
-    private Quaternionf getHandRotation(int deviceIndex) {
-        var hand = clientData.vrPlayer.vrdata_world_pre.getHand(deviceIndex);
-        return hand != null ? new Quaternionf().setFromNormalized(hand.getMatrix()) : null;
+        TrackerState state = trackerStates.get(bodyPart);
+        if (state != null) {
+            state.lastTipPosition = tip;
+            state.lastDevicePosition = handPos;
+            state.lastDeviceRotation = rot;
+        }
     }
 
     private Vec3 computeTip(Vec3 handPos, Vector3f handDir, float offset) {
@@ -119,22 +104,27 @@ public class AbstractSwingTracker implements DebugRenderTracker {
         return handPos.add(tipOffsetVec.x, tipOffsetVec.y, tipOffsetVec.z);
     }
 
-    private float computeSpeed(int tracker, Vec3 tip) {
-        Vec3 lastTipVec = lastTipPositions[tracker];
+    private float computeSpeed(VRBodyPart bodyPart, Vec3 tip) {
+        TrackerState state = trackerStates.get(bodyPart);
+        if (state == null) return 0f;
+        Vec3 lastTipVec = state.lastTipPosition;
         if (lastTipVec == null) return 0f;
         double dist = tip.distanceTo(lastTipVec);
         return (float) (dist * 20.0);
     }
 
-    private void handleSwingState(int tracker, LocalPlayer player, SwingContext context) {
+    private void handleSwingState(VRBodyPart bodyPart, LocalPlayer player, SwingContext context) {
+        TrackerState state = trackerStates.get(bodyPart);
+        if (state == null) return;
+
         float startThreshold = BASE_SWING_SPEED_THRESHOLD * (player.isCreative() ? 1.5f : 1.0f) * 0.15f;
 
-        if (!isSwinging[tracker] && context.speed() > startThreshold) {
-            isSwinging[tracker] = true;
+        if (!state.isSwinging && context.speed() > startThreshold) {
+            state.isSwinging = true;
             for (SwingTracker _tracker : this.swingListeners) _tracker.onSwingStart(context);
         }
 
-        if (isSwinging[tracker]) {
+        if (state.isSwinging) {
             for (SwingTracker _tracker : this.swingListeners) _tracker.onSwingUpdate(context);
 
             if (context.speed() > BASE_SWING_SPEED_THRESHOLD) {
@@ -142,12 +132,11 @@ public class AbstractSwingTracker implements DebugRenderTracker {
             }
         }
 
-        if (isSwinging[tracker] && context.speed() <= startThreshold) {
-            isSwinging[tracker] = false;
+        if (state.isSwinging && context.speed() <= startThreshold) {
+            state.isSwinging = false;
             for (SwingTracker _tracker : this.swingListeners) _tracker.onSwingEnd(context);
         }
     }
-
 
     @Override
     public ProcessType processType() {
@@ -172,24 +161,19 @@ public class AbstractSwingTracker implements DebugRenderTracker {
     }
 
     @Override
-    public void idleProcess(@Nullable LocalPlayer player) {
-    }
-
-    @Override
     public void activeProcess(@Nullable LocalPlayer player) {
         tick(player);
     }
 
     @Override
     public void inactiveProcess(@Nullable LocalPlayer player) {
-        for (int i = 0; i < 4; i++) {
-            lastTipPositions[i] = null;
-            lastDevicePositions[i] = null;
-            lastDeviceRotations[i] = null;
-            isSwinging[i] = false;
+        for (TrackerState state : trackerStates.values()) {
+            state.lastTipPosition = null;
+            state.lastDevicePosition = null;
+            state.lastDeviceRotation = null;
+            state.isSwinging = false;
         }
     }
-
 
     @Override
     public void renderDebug() {

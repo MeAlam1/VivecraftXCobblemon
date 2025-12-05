@@ -45,7 +45,6 @@ import java.util.List;
  * Now implements Tracker so it can be registered and will attach/detach to the detector at runtime.
  */
 public class VanillaSwingTracker implements SwingTracker, DebugRenderTracker {
-    private static final int[] CONTROLLER_AND_FEET = AbstractSwingTracker.TRACKER_DEVICE_INDICES;
     private static final VRBodyPart[] BODYPARTS = new VRBodyPart[]{
         VRBodyPart.MAIN_HAND, VRBodyPart.OFF_HAND, VRBodyPart.RIGHT_FOOT, VRBodyPart.LEFT_FOOT
     };
@@ -122,14 +121,14 @@ public class VanillaSwingTracker implements SwingTracker, DebugRenderTracker {
         }
         if (i < 0) return;
 
-        int device = CONTROLLER_AND_FEET[i];
-        boolean isHand = i < 2;
+        int deviceIndex = deviceIndexFor(bodyPart);
+        boolean isHand = bodyPart.isHand();
 
         float speedThreshold = SPEED_THRESH;
         if (player.isCreative()) speedThreshold *= 1.5f;
 
-        ItemStack itemstack = player.getItemInHand(
-            device == MCVR.OFFHAND_CONTROLLER ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND);
+        InteractionHand useHand = handFor(bodyPart);
+        ItemStack itemstack = player.getItemInHand(useHand);
         Item item = itemstack.getItem();
 
         boolean isTool = false;
@@ -163,14 +162,11 @@ public class VanillaSwingTracker implements SwingTracker, DebugRenderTracker {
 
         Vec3 handPos = context.start();
         Vec3 attackingPoint = constrain(handPos, context.tip());
-        Vec3 weaponTip = constrain(handPos, handPos.add(
-            dh.vrPlayer.vrdata_world_pre.getHand(device).getCustomVector(MathUtils.BACK)
-                .mul(weaponLength + entityReachAdd, new Vector3f()).x,
-            dh.vrPlayer.vrdata_world_pre.getHand(device).getCustomVector(MathUtils.BACK)
-                .mul(weaponLength + entityReachAdd, new Vector3f()).y,
-            dh.vrPlayer.vrdata_world_pre.getHand(device).getCustomVector(MathUtils.BACK)
-                .mul(weaponLength + entityReachAdd, new Vector3f()).z
-        ));
+
+        // use body part pose for direction
+        var partPose = dh.vrPlayer.vrdata_world_pre.getBodyPart(bodyPart);
+        Vector3f backVec = partPose.getCustomVector(MathUtils.BACK).mul(weaponLength + entityReachAdd, new Vector3f());
+        Vec3 weaponTip = constrain(handPos, handPos.add(backVec.x, backVec.y, backVec.z));
 
         AABB weaponBB = new AABB(handPos, attackingPoint);
         AABB weaponTipBB = new AABB(handPos, weaponTip);
@@ -204,7 +200,7 @@ public class VanillaSwingTracker implements SwingTracker, DebugRenderTracker {
                     } else {
                         entityAct = false;
                     }
-                    dh.vr.triggerHapticPulse(device, 1000);
+                    dh.vr.triggerHapticPulse(deviceIndex, 1000);
                     this.lastWeaponSolid[i] = true;
                 }
                 inAnEntity = true;
@@ -260,9 +256,7 @@ public class VanillaSwingTracker implements SwingTracker, DebugRenderTracker {
         int totalHits = 3 + Math.max(0, Math.min((int) (context.speed() - speedThreshold), 4));
 
         if (dh.vrSettings.doorHitting && isOpenable(blockstate, blockHit.getDirection()) &&
-            mc.gameMode.useItemOn(player,
-                device == MCVR.OFFHAND_CONTROLLER ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND, blockHit) !=
-                InteractionResult.PASS)
+            mc.gameMode.useItemOn(player, useHand, blockHit) != InteractionResult.PASS)
         {
         } else if (isHand && (item instanceof HoeItem || itemstack.is(ViveItemTags.VIVECRAFT_HOES) ||
             itemstack.is(ViveItemTags.VIVECRAFT_SCYTHES)
@@ -270,23 +264,22 @@ public class VanillaSwingTracker implements SwingTracker, DebugRenderTracker {
             && (blockstate.getBlock() instanceof CropBlock || blockstate.getBlock() instanceof StemBlock ||
             blockstate.getBlock() instanceof AttachedStemBlock || blockstate.is(ViveBlockTags.VIVECRAFT_CROPS) ||
             item.useOn(
-                    new UseOnContext(player, device == 0 ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND, blockHit))
+                    new UseOnContext(player, useHand, blockHit))
                 .shouldSwing()
         ))
         {
-            boolean useSuccessful = mc.gameMode.useItemOn(player,
-                device == 0 ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND, blockHit).shouldSwing();
+            boolean useSuccessful = mc.gameMode.useItemOn(player, useHand, blockHit).shouldSwing();
             if (itemstack.is(ViveItemTags.VIVECRAFT_SCYTHES) && !useSuccessful) {
-                mc.gameMode.useItem(player, device == 0 ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND);
+                mc.gameMode.useItem(player, useHand);
             }
         } else if (isHand && (item instanceof BrushItem)) {
             ((BrushItem) item).spawnDustParticles(player.level(), blockHit, blockstate, player.getViewVector(0.0F),
-                device == 0 ? player.getMainArm() : player.getMainArm().getOpposite());
+                useHand == InteractionHand.MAIN_HAND ? player.getMainArm() : player.getMainArm().getOpposite());
             player.level().playSound(player, blockHit.getBlockPos(),
                 blockstate.getBlock() instanceof BrushableBlock ?
                     ((BrushableBlock) blockstate.getBlock()).getBrushSound() :
                     SoundEvents.BRUSH_GENERIC, SoundSource.BLOCKS);
-            mc.gameMode.useItemOn(player, device == 0 ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND, blockHit);
+            mc.gameMode.useItemOn(player, useHand, blockHit);
         } else if (blockstate.getBlock() instanceof NoteBlock || blockstate.is(ViveBlockTags.VIVECRAFT_MUSIC_BLOCKS)) {
             mc.gameMode.continueDestroyBlock(blockHit.getBlockPos(), blockHit.getDirection());
         } else {
@@ -308,7 +301,7 @@ public class VanillaSwingTracker implements SwingTracker, DebugRenderTracker {
                 3 * totalHits, blockHit.getBlockPos(), blockstate, 0.6F, 1.0F);
         }
 
-        dh.vr.triggerHapticPulse(device, 250 * totalHits);
+        dh.vr.triggerHapticPulse(deviceIndex, 250 * totalHits);
 
         ClientNetworking.resetActiveBodyPart();
     }
@@ -432,5 +425,21 @@ public class VanillaSwingTracker implements SwingTracker, DebugRenderTracker {
             return !open && direction.getAxis() == facing.getAxis();
         }
         return false;
+    }
+
+    private int deviceIndexFor(VRBodyPart bodyPart) {
+        return switch (bodyPart) {
+            case MAIN_HAND -> 0;
+            case OFF_HAND -> MCVR.OFFHAND_CONTROLLER;
+            case RIGHT_FOOT -> MCVR.RIGHT_FOOT_TRACKER;
+            case LEFT_FOOT -> MCVR.LEFT_FOOT_TRACKER;
+            case WAIST -> MCVR.WAIST_TRACKER;
+            case HEAD -> MCVR.CAMERA_TRACKER;
+            default -> 0;
+        };
+    }
+
+    private InteractionHand handFor(VRBodyPart bodyPart) {
+        return bodyPart == VRBodyPart.OFF_HAND ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND;
     }
 }
