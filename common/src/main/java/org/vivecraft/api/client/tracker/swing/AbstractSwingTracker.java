@@ -355,19 +355,7 @@ public class AbstractSwingTracker implements DebugRenderTracker, SwingSource {
     }
 
     /**
-     * Decide whether an impact from a non-main-hand body part should be suppressed in favor
-     * of a stronger simultaneous swing from another body part.
-     * <p>
-     * Suppression rules (heuristic):
-     * <ul>
-     *   <li>Main hand never suppressed by this method.</li>
-     *   <li>If the main hand is swinging and its speed >= 80% of this part's speed, suppress.</li>
-     *   <li>If any other part's speed exceeds this part's speed by more than 0.6 m/s, suppress.</li>
-     * </ul>
-     *
-     * @param bodyPart the body part being considered for impact emission
-     * @param context  current swing context (provides this part's speed)
-     * @return true if the impact should be suppressed, false otherwise
+     * TODO: REMOVE
      */
     private boolean shouldSuppressImpact(VRBodyPart bodyPart, SwingContext context) {
 
