@@ -186,18 +186,12 @@ public class AbstractSwingSource implements DebugRenderTracker, SwingSource {
         Vec3 tip = computeTip(handPos, handDir);
         Quaternionf rot = new Quaternionf().setFromNormalized(devicePose.getMatrix());
 
-
-        Vec3 relativeDelta = computeRelativeDelta(bodyPart, tip, handPos);
         float speed = computeSpeed(bodyPart, tip, handPos);
 
         TrackerState state = trackerStates.get(bodyPart);
         if (state != null) state.lastSpeed = speed;
 
-
-        Vec3 direction =
-            (relativeDelta != null && relativeDelta.length() > 0.0001) ? relativeDelta.normalize() : new Vec3(0, 0, 0);
-
-        SwingContext context = new SwingContext(bodyPart, handPos, tip, speed, rot, direction);
+        SwingContext context = new SwingContext(bodyPart, handPos, tip, speed, rot);
 
 
         handleSwingState(bodyPart, player, context);
@@ -223,28 +217,6 @@ public class AbstractSwingSource implements DebugRenderTracker, SwingSource {
     private Vec3 computeTip(Vec3 handPos, Vector3f handDir) {
         Vector3f tipOffsetVec = handDir.mul((float) 0.3, new Vector3f());
         return handPos.add(tipOffsetVec.x, tipOffsetVec.y, tipOffsetVec.z);
-    }
-
-    /**
-     * Compute the tip movement relative to the device motion. Subtracting device translation
-     * isolates the tip motion caused by rotation or extension of the held object.
-     *
-     * @param bodyPart  the tracked body part
-     * @param tip       current tip world position
-     * @param devicePos current device/controller world position
-     * @return relative delta vector (current — previous) in world coordinates, or null if no prior tip sample exists
-     */
-    private Vec3 computeRelativeDelta(VRBodyPart bodyPart, Vec3 tip, Vec3 devicePos) {
-        TrackerState state = trackerStates.get(bodyPart);
-        if (state == null) return null;
-        Vec3 lastTipVec = state.lastTipPosition;
-        Vec3 lastDevice = state.lastDevicePosition;
-        if (lastTipVec == null) return null;
-
-        Vec3 tipDelta = tip.subtract(lastTipVec);
-        Vec3 deviceDelta = (lastDevice != null) ? devicePos.subtract(lastDevice) : new Vec3(0, 0, 0);
-
-        return tipDelta.subtract(deviceDelta);
     }
 
     /**
@@ -322,7 +294,6 @@ public class AbstractSwingSource implements DebugRenderTracker, SwingSource {
 
         if (!state.isSwinging && context.speed() > startThreshold) {
             state.isSwinging = true;
-            VRSettings.LOGGER.info("Swing started for {}", bodyPart);
 
 
             state.cumulativeTipDelta = context.speed() / 20.0;
@@ -337,7 +308,6 @@ public class AbstractSwingSource implements DebugRenderTracker, SwingSource {
 
 
             if (context.speed() > BASE_SWING_SPEED_THRESHOLD) {
-                VRSettings.LOGGER.info("{} swing vec={}", bodyPart, context.direction());
 
                 for (SwingTracker _tracker : this.swingListeners) _tracker.onSwingImpact(context);
             }

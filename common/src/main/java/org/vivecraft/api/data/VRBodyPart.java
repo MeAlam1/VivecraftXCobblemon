@@ -88,6 +88,16 @@ public enum VRBodyPart {
     }
 
     /**
+     * Gets the corresponding InteractionHand to the provided VRBodyPart
+     *
+     * @param bodyPart VRBodyPart to convert
+     * @return InteractionHand that corresponds to the given VRBodyPart
+     */
+    public static InteractionHand toInteractionHand(VRBodyPart bodyPart) {
+        return bodyPart == VRBodyPart.OFF_HAND ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND;
+    }
+
+    /**
      * Whether this body part type is available in the provided full-body tracking mode.
      *
      * @param fbtMode The full-body tracking mode to check.

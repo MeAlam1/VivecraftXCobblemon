@@ -22,14 +22,14 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
 import org.vivecraft.api.client.Tracker;
-import org.vivecraft.client_vr.gameplay.sources.AbstractSwingSource;
+import org.vivecraft.api.client.tracker.swing.SwingContext;
 import org.vivecraft.api.client.tracker.swing.SwingSource;
 import org.vivecraft.api.client.tracker.swing.SwingTracker;
-import org.vivecraft.api.client.tracker.swing.SwingContext;
 import org.vivecraft.api.data.VRBodyPart;
 import org.vivecraft.api.utils.VRItemUtils;
 import org.vivecraft.client.network.ClientNetworking;
 import org.vivecraft.client_vr.ClientDataHolderVR;
+import org.vivecraft.client_vr.gameplay.sources.AbstractSwingSource;
 import org.vivecraft.client_vr.provider.MCVR;
 import org.vivecraft.client_vr.settings.VRSettings;
 import org.vivecraft.common.utils.MathUtils;
@@ -112,6 +112,7 @@ public class VanillaSwingTracker implements SwingTracker, DebugRenderTracker {
         if (player == null) return;
 
         VRBodyPart bodyPart = context.bodyPart();
+
         int i = -1;
         for (int idx = 0; idx < BODYPARTS.length; idx++) {
             if (BODYPARTS[idx] == bodyPart) {
@@ -127,7 +128,7 @@ public class VanillaSwingTracker implements SwingTracker, DebugRenderTracker {
         float speedThreshold = SPEED_THRESH;
         if (player.isCreative()) speedThreshold *= 1.5f;
 
-        InteractionHand useHand = handFor(bodyPart);
+        InteractionHand useHand = VRBodyPart.toInteractionHand(bodyPart);
         ItemStack itemstack = player.getItemInHand(useHand);
         Item item = itemstack.getItem();
 
@@ -437,9 +438,5 @@ public class VanillaSwingTracker implements SwingTracker, DebugRenderTracker {
             case HEAD -> MCVR.CAMERA_TRACKER;
             default -> 0;
         };
-    }
-
-    private InteractionHand handFor(VRBodyPart bodyPart) {
-        return bodyPart == VRBodyPart.OFF_HAND ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND;
     }
 }

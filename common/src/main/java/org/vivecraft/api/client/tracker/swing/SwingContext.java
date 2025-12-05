@@ -10,14 +10,11 @@ import org.vivecraft.api.data.VRBodyPart;
  * <i>This is just raw data. No game logic, no interpretation.</i>
  * </p>
  *
- * @param bodyPart  which controller/foot this swing came from
- * @param start     the base position of the hand/controller in world space
- * @param tip       the end of the swing (a bit forward from the hand)
- * @param speed     how fast the tip is moving, in m/s
- * @param rotation  the current rotation of the hand/controller
- * @param direction the normalized direction vector of the swing
+ * @param bodyPart which controller/foot this swing came from
+ * @param start    the base position of the hand/controller in world space
+ * @param tip      the end of the swing (a bit forward from the hand)
+ * @param speed    how fast the tip is moving, in m/s
+ * @param rotation the current rotation of the hand/controller
  */
-public record SwingContext(VRBodyPart bodyPart, Vec3 start, Vec3 tip, float speed, Quaternionf rotation,
-                           Vec3 direction)
-{
+public record SwingContext(VRBodyPart bodyPart, Vec3 start, Vec3 tip, float speed, Quaternionf rotation) {
 }
