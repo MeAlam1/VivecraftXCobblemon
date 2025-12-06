@@ -14,6 +14,7 @@ import org.vivecraft.client_vr.provider.ControllerType;
 import org.vivecraft.client_vr.render.VRFirstPersonArmSwing;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class InteractTracker implements DebugRenderTracker {
@@ -47,6 +48,16 @@ public class InteractTracker implements DebugRenderTracker {
         }
         this.modules.sort((a, b) -> a.getPriority() == b.getPriority() ? a.getId().compareTo(b.getId()) :
             Integer.compare(a.getPriority(), b.getPriority()));
+    }
+
+    /**
+     * unregisters interact modules. Not re-sorted, since removal of one module won't affect the ordering of the others
+     * relative to each other.
+     *
+     * @param modules modules to unregister. Those not found are ignored.
+     */
+    public void unregisterModules(InteractModule... modules) {
+        this.modules.removeAll(List.of(modules));
     }
 
     @Override

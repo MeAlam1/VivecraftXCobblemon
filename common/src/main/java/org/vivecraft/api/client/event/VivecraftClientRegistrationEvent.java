@@ -1,5 +1,7 @@
 package org.vivecraft.api.client.event;
 
+import org.vivecraft.api.RegisterableObject;
+import org.vivecraft.api.VRAPI;
 import org.vivecraft.api.client.InteractModule;
 import org.vivecraft.api.client.Tracker;
 import org.vivecraft.api.client.VRClientAPI;
@@ -11,7 +13,9 @@ import java.util.function.Consumer;
  * with this event by registering a handler using {@link VRClientAPI#addClientRegistrationHandler(Consumer)}.
  *
  * @since 1.3.0
+ * @deprecated Use {@link VRAPI#register(RegisterableObject...)} instead.
  */
+@Deprecated(forRemoval = false)
 public interface VivecraftClientRegistrationEvent {
 
     /**

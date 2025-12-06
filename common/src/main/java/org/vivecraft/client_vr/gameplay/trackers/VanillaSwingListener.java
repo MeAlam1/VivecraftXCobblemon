@@ -21,32 +21,26 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
-import org.vivecraft.api.client.VRClientAPI;
-import org.vivecraft.api.client.tracker.TrackerSensor;
 import org.vivecraft.api.client.tracker.swing.SwingContext;
-import org.vivecraft.api.client.tracker.swing.SwingTracker;
+import org.vivecraft.api.client.tracker.swing.SwingListener;
 import org.vivecraft.api.data.VRBodyPart;
 import org.vivecraft.api.utils.VRItemUtils;
 import org.vivecraft.client.network.ClientNetworking;
 import org.vivecraft.client_vr.ClientDataHolderVR;
-import org.vivecraft.client_vr.gameplay.sources.SwingSensor;
 import org.vivecraft.client_vr.provider.MCVR;
-import org.vivecraft.client_vr.settings.VRSettings;
 import org.vivecraft.common.utils.MathUtils;
 import org.vivecraft.data.ViveBlockTags;
 import org.vivecraft.data.ViveItemTags;
 import org.vivecraft.mod_compat_vr.epicfight.EpicFightHelper;
 
-import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.List;
 
 /**
  * TODO: Cleanup like ive done with {@link org.vivecraft.client_vr.gameplay.sources.SwingSensor}
- * Vanilla adapter: listens to GeneralSwingTracker and applies vanilla behaviour.
- * Now implements Tracker so it can be registered and will attach/detach to the detector at runtime.
+ * Vanilla adapter: listens to {@link org.vivecraft.client_vr.gameplay.sources.SwingSensor} and applies vanilla behaviour.
  */
-public class VanillaSwingTracker implements SwingTracker, DebugRenderTracker {
+public class VanillaSwingListener implements SwingListener {
     private static final VRBodyPart[] BODYPARTS = new VRBodyPart[]{
         VRBodyPart.MAIN_HAND, VRBodyPart.OFF_HAND, VRBodyPart.RIGHT_FOOT, VRBodyPart.LEFT_FOOT
     };
@@ -60,11 +54,10 @@ public class VanillaSwingTracker implements SwingTracker, DebugRenderTracker {
     };
     private final Vec3[] lastBlockHit = new Vec3[4];
     private final AABB[] lastAttackAABB = new AABB[4];
-    private TrackerSensor swingSensor;
 
     private int disableSwing = 3;
 
-    public VanillaSwingTracker(Minecraft mc, ClientDataHolderVR dh) {
+    public VanillaSwingListener(Minecraft mc, ClientDataHolderVR dh) {
         this.mc = mc;
         this.dh = dh;
     }
@@ -291,84 +284,6 @@ public class VanillaSwingTracker implements SwingTracker, DebugRenderTracker {
         dh.vr.triggerHapticPulse(deviceIndex, 250 * totalHits);
 
         ClientNetworking.resetActiveBodyPart();
-    }
-
-
-    @Override
-    public ProcessType processType() {
-        return ProcessType.PER_TICK;
-    }
-
-    @Override
-    public boolean isActive(@Nullable LocalPlayer player) {
-        if (this.disableSwing > 0) {
-            this.disableSwing--;
-            return false;
-        } else if (this.mc.gameMode == null) {
-            return false;
-        } else if (player == null) {
-            return false;
-        } else if (!player.isAlive()) {
-            return false;
-        } else if (player.isSleeping()) {
-            return false;
-        } else if (this.mc.screen != null) {
-            return false;
-        } else if (this.dh.vrSettings.weaponCollision ==
-            VRSettings.WeaponCollision.OFF)
-        {
-            return false;
-        } else if (
-            this.dh.vrSettings.weaponCollision == VRSettings.WeaponCollision.AUTO &&
-                player.isCreative())
-        {
-            return false;
-        } else if (this.dh.vrSettings.seated) {
-            return false;
-        } else if (this.dh.vrSettings.getVrFreeMoveMode(false, this.dh.vrPlayer.vrdata_world_pre.fbtMode) ==
-            VRSettings.FreeMove.RUN_IN_PLACE && player.zza > 0.0F)
-        {
-            return false;
-        } else if (player.isBlocking() && !ClientNetworking.SERVER_ALLOWS_ATTACKING_WHILE_BLOCKING) {
-            return false;
-        } else {
-            return !this.dh.jumpTracker.isjumping();
-        }
-    }
-
-    @Override
-    public void idleProcess(@Nullable LocalPlayer player) {
-    }
-
-    @Override
-    public void activeProcess(@Nullable LocalPlayer player) {
-        if (this.swingSensor == null && this.dh != null) {
-            SwingSensor source = VRClientAPI.instance().getTrackerSensor(SwingSensor.class);
-            if (source == null) return;
-            if (this.swingSensor == source) return;
-            if (this.swingSensor != null) this.swingSensor.removeListener(this);
-            this.swingSensor = source;
-            this.swingSensor.addListener(this);
-        }
-    }
-
-    @Override
-    public void inactiveProcess(@Nullable LocalPlayer player) {
-        for (int i = 0; i < 4; i++) {
-            this.lastWeaponSolid[i] = false;
-            this.lastHitEntities[i] = Collections.emptyList();
-            this.lastBlockHit[i] = null;
-            this.lastAttackAABB[i] = null;
-        }
-        if (this.swingSensor != null) {
-            this.swingSensor.removeListener(this);
-            this.swingSensor = null;
-        }
-    }
-
-
-    @Override
-    public void renderDebug() {
     }
 
     private boolean getIsHittingBlock() {

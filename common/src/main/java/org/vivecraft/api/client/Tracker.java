@@ -2,6 +2,7 @@ package org.vivecraft.api.client;
 
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.entity.player.Player;
+import org.vivecraft.api.RegisterableObject;
 import org.vivecraft.api.VRAPI;
 
 import javax.annotation.Nullable;
@@ -17,7 +18,7 @@ import javax.annotation.Nullable;
  *
  * @since 1.3.0
  */
-public interface Tracker {
+public interface Tracker extends RegisterableObject {
 
     /**
      * The process type for this tracker. Determines when and how frequently it is Processed. See {@link ProcessType} for

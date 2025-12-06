@@ -5,6 +5,7 @@ import org.vivecraft.api.client.Tracker;
 import org.vivecraft.api.client.event.VivecraftClientRegistrationEvent;
 import org.vivecraft.client_vr.ClientDataHolderVR;
 
+@Deprecated(forRemoval = false) // Use VRAPI#register() instead.
 public final class VivecraftClientRegistrationEventImpl implements VivecraftClientRegistrationEvent {
 
     public static final VivecraftClientRegistrationEventImpl INSTANCE = new VivecraftClientRegistrationEventImpl();

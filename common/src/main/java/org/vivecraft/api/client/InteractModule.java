@@ -4,6 +4,7 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.phys.Vec3;
+import org.vivecraft.api.RegisterableObject;
 
 import javax.annotation.Nullable;
 
@@ -19,7 +20,7 @@ import javax.annotation.Nullable;
  *
  * @since 1.3.0
  */
-public interface InteractModule {
+public interface InteractModule extends RegisterableObject {
 
     /**
      * The priority value of a module determines when its {@link #isActive} method is called compared to other modules.

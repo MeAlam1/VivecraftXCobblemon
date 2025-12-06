@@ -73,7 +73,7 @@ public class ClientDataHolderVR {
     public final HapticTracker hapticTracker;
 
     // Trackers
-    public final VanillaSwingTracker vanillaSwingTracker;
+    public final VanillaSwingListener vanillaSwingListener;
 
     // Sensors
     public final SwingSensor swingSensor;
@@ -149,9 +149,10 @@ public class ClientDataHolderVR {
         this.vehicleTracker = createTracker(VehicleTracker::new);
         this.hapticTracker = createTracker(HapticTracker::new);
 
-        this.vanillaSwingTracker = createTracker(VanillaSwingTracker::new);
-
         this.swingSensor = createTracker(SwingSensor::new);
+
+        this.vanillaSwingListener = new VanillaSwingListener(Minecraft.getInstance(), this);
+        this.swingSensor.addListener(this.vanillaSwingListener);
 
         // create interact modules
         this.hotbarModule = new InteractiveHotbarModule(Minecraft.getInstance(), this);
@@ -210,6 +211,20 @@ public class ClientDataHolderVR {
             this.trackers.add(tracker);
             if (tracker instanceof ItemInUseTracker itemInUseTracker) {
                 this.itemInUseTrackers.add(itemInUseTracker);
+            }
+        }
+    }
+
+    /**
+     * unregisters trackers
+     *
+     * @param trackers trackers to unregister. Those not registered are ignored.
+     */
+    public void unregisterTracker(Tracker... trackers) {
+        for (Tracker tracker : trackers) {
+            this.trackers.remove(tracker);
+            if (tracker instanceof ItemInUseTracker itemInUseTracker) {
+                this.itemInUseTrackers.remove(itemInUseTracker);
             }
         }
     }

@@ -2,17 +2,20 @@ package org.vivecraft.client_vr.gameplay.sources;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
+import org.apache.commons.lang3.tuple.Pair;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
-import org.vivecraft.api.client.Tracker;
-import org.vivecraft.api.client.tracker.TrackerSensor;
+import org.joml.Vector3fc;
 import org.vivecraft.api.client.tracker.swing.SwingContext;
-import org.vivecraft.api.client.tracker.swing.SwingTracker;
+import org.vivecraft.api.client.tracker.swing.SwingListener;
 import org.vivecraft.api.data.FBTMode;
 import org.vivecraft.api.data.VRBodyPart;
 import org.vivecraft.client_vr.ClientDataHolderVR;
+import org.vivecraft.client_vr.VRData;
 import org.vivecraft.client_vr.gameplay.trackers.DebugRenderTracker;
+import org.vivecraft.client_vr.render.helpers.DebugRenderHelper;
 import org.vivecraft.client_vr.settings.VRSettings;
 import org.vivecraft.common.utils.MathUtils;
 
@@ -26,7 +29,7 @@ import java.util.*;
  * <ul>
  *   <li>Tracks motion for multiple VR body parts (hands, optional feet).</li>
  *   <li>Detects swing lifecycle events: start, update, impact, end.</li>
- *   <li>Notifies registered {@link SwingTracker} listeners of those events.</li>
+ *   <li>Notifies registered {@link SwingListener} listeners of those events.</li>
  * </ul>
  * <p>
  * Notes:
@@ -36,7 +39,7 @@ import java.util.*;
  *   <li>The tracker is designed to be polled once per client tick (see {@link #processType}).</li>
  * </ul>
  */
-public class SwingSensor implements DebugRenderTracker, TrackerSensor {
+public class SwingSensor implements DebugRenderTracker {
     /**
      * Default speed threshold (m/s) used to determine an impact on a swing.
      * This value is scaled by game state (creative) and hand bias when applied.
@@ -55,8 +58,8 @@ public class SwingSensor implements DebugRenderTracker, TrackerSensor {
     /** Holder for VR-specific client-side data. */
     private final ClientDataHolderVR clientData;
 
-    /** Registered listeners that will receive swing lifecycle callbacks. */
-    private final List<SwingTracker> swingListeners = new ArrayList<>();
+    /** Registered trackers that will receive swing lifecycle callbacks. */
+    private final List<SwingListener> swingListeners = new ArrayList<>();
 
     /**
      * Internal per-body-part state used to detect swings and compute smoothed speeds.
@@ -110,23 +113,25 @@ public class SwingSensor implements DebugRenderTracker, TrackerSensor {
     }
 
     /**
-     * Register a {@link SwingTracker} listener.
+     * Register a {@link SwingListener} to react to swings.
      *
-     * @param tracker listener to notify; duplicates are ignored.
+     * @param swingListener tracker to notify.
+     * @throws IllegalArgumentException if the provided SwingTracker was already registered.
      */
-    public void addListener(Tracker tracker) {
-        if (!(tracker instanceof SwingTracker)) return;
-        if (!swingListeners.contains(tracker)) swingListeners.add((SwingTracker) tracker);
+    public void addListener(SwingListener swingListener) {
+        if (swingListeners.contains(swingListener)) {
+            throw new IllegalArgumentException("SwingTracker is already added and should not be added again!");
+        }
+        swingListeners.add(swingListener);
     }
 
     /**
-     * Unregister a {@link SwingTracker} listener.
+     * Unregister a {@link SwingListener} that reacts to swings.
      *
-     * @param tracker listener to remove; no-op if not registered.
+     * @param swingListener listener to remove; no-op if not registered.
      */
-    public void removeListener(Tracker tracker) {
-        if (!(tracker instanceof SwingTracker)) return;
-        swingListeners.remove(tracker);
+    public void removeListener(SwingListener swingListener) {
+        swingListeners.remove(swingListener);
     }
 
     /**
@@ -302,17 +307,21 @@ public class SwingSensor implements DebugRenderTracker, TrackerSensor {
             state.cumulativeTipDelta = context.speed() / 20.0;
             state.tipSamples = 1;
 
-            for (SwingTracker _tracker : this.swingListeners) _tracker.onSwingStart(context);
+            for (SwingListener listener : this.swingListeners) {
+                listener.onSwingStart(context);
+            }
         }
 
 
         if (state.isSwinging) {
-            for (SwingTracker _tracker : this.swingListeners) _tracker.onSwingUpdate(context);
-
+            for (SwingListener listener : this.swingListeners) {
+                listener.onSwingUpdate(context);
+            }
 
             if (context.speed() > BASE_SWING_SPEED_THRESHOLD) {
-
-                for (SwingTracker _tracker : this.swingListeners) _tracker.onSwingImpact(context);
+                for (SwingListener listener : this.swingListeners) {
+                    listener.onSwingImpact(context);
+                }
             }
         }
 
@@ -321,7 +330,9 @@ public class SwingSensor implements DebugRenderTracker, TrackerSensor {
             state.isSwinging = false;
             state.cumulativeTipDelta = 0.0;
             state.tipSamples = 0;
-            for (SwingTracker _tracker : this.swingListeners) _tracker.onSwingEnd(context);
+            for (SwingListener listener : this.swingListeners) {
+                listener.onSwingEnd(context);
+            }
         }
     }
 

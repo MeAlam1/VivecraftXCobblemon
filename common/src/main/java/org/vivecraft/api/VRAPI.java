@@ -1,6 +1,7 @@
 package org.vivecraft.api;
 
 import net.minecraft.world.entity.player.Player;
+import org.vivecraft.api.client.tracker.swing.SwingListener;
 import org.vivecraft.api.data.VRPose;
 import org.vivecraft.api.data.VRPoseHistory;
 import org.vivecraft.common.api_impl.VRAPIImpl;
@@ -59,4 +60,25 @@ public interface VRAPI {
      */
     @Nullable
     VRPoseHistory getHistoricalVRPoses(Player player);
+
+    /**
+     * Register one or more registerable objects, such as {@link org.vivecraft.api.client.Tracker}s,
+     * {@link org.vivecraft.api.client.InteractModule}s, or
+     * {@link SwingListener}s. This allows the objects to interact with the
+     * Vivecraft systems they implement interfaces for.
+     * @param registerableObjects One or more registerable objects to register. Invalid objects will throw an
+     *                            IllegalArgumentException.
+     * @throws IllegalArgumentException If one or more provided objects are null or have nowhere to be registered to.
+     */
+    void register(RegisterableObject... registerableObjects);
+
+    /**
+     * Unregister one or more registerable objects, such as {@link org.vivecraft.api.client.Tracker}s,
+     * {@link org.vivecraft.api.client.InteractModule}s, or
+     * {@link SwingListener}s. This makes the objects no longer interact with any
+     * of Vivecraft's systems.
+     * @param registerableObjects One or more registerable objects to register. Objects not already registered are
+     *                            silently ignored.
+     */
+    void unregister(RegisterableObject... registerableObjects);
 }

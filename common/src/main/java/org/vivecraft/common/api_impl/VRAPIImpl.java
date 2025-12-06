@@ -3,11 +3,16 @@ package org.vivecraft.common.api_impl;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
+import org.vivecraft.api.RegisterableObject;
 import org.vivecraft.api.VRAPI;
+import org.vivecraft.api.client.InteractModule;
+import org.vivecraft.api.client.Tracker;
+import org.vivecraft.api.client.tracker.swing.SwingListener;
 import org.vivecraft.api.data.VRPose;
 import org.vivecraft.api.data.VRPoseHistory;
 import org.vivecraft.client.ClientVRPlayers;
 import org.vivecraft.client.api_impl.VRClientAPIImpl;
+import org.vivecraft.client_vr.ClientDataHolderVR;
 import org.vivecraft.common.api_impl.data.VRPoseHistoryImpl;
 import org.vivecraft.server.ServerVRPlayers;
 
@@ -77,6 +82,45 @@ public final class VRAPIImpl implements VRAPI {
             return getMap(player.level().isClientSide).get(player.getUUID());
         } else {
             return null;
+        }
+    }
+
+    @Override
+    public void register(RegisterableObject... registerableObjects) {
+        for (RegisterableObject registerableObject : registerableObjects) {
+            boolean registeredSomewhere = false; // Used to guide devs using the API incorrectly
+            if (registerableObject instanceof Tracker tracker) {
+                ClientDataHolderVR.getInstance().registerTracker(tracker);
+                registeredSomewhere = true;
+            }
+            if (registerableObject instanceof InteractModule interactModule) {
+                ClientDataHolderVR.getInstance().interactTracker.registerModules(interactModule);
+                registeredSomewhere = true;
+            }
+            if (registerableObject instanceof SwingListener swingListener) {
+                ClientDataHolderVR.getInstance().swingSensor.addListener(swingListener);
+                registeredSomewhere = true;
+            }
+
+            if (!registeredSomewhere) {
+                throw new IllegalArgumentException("An instance of %s was provided but had nowhere to be registered.".formatted(registerableObject.getClass()));
+            }
+        }
+
+    }
+
+    @Override
+    public void unregister(RegisterableObject... registerableObjects) {
+        for (RegisterableObject registerableObject : registerableObjects) {
+            if (registerableObject instanceof Tracker tracker) {
+                ClientDataHolderVR.getInstance().unregisterTracker(tracker);
+            }
+            if (registerableObject instanceof InteractModule interactModule) {
+                ClientDataHolderVR.getInstance().interactTracker.unregisterModules(interactModule);
+            }
+            if (registerableObject instanceof SwingListener swingListener) {
+                ClientDataHolderVR.getInstance().swingSensor.removeListener(swingListener);
+            }
         }
     }
 

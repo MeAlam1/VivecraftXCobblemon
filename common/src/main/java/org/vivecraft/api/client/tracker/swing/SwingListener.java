@@ -1,5 +1,7 @@
 package org.vivecraft.api.client.tracker.swing;
 
+import org.vivecraft.api.RegisterableObject;
+
 /**
  * Listener for swing lifecycle events.
  *
@@ -7,7 +9,7 @@ package org.vivecraft.api.client.tracker.swing;
  * callback receives a {@link SwingContext} containing raw, read-only data about
  * the swing (body part, start position, tip position, speed, and rotation).</p>
  */
-public interface SwingTracker {
+public interface SwingListener extends RegisterableObject {
     /**
      * Called when a swing is detected and has just started.
      *
