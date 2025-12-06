@@ -6,7 +6,7 @@ import org.vivecraft.api.client.VRClientAPI;
 import org.vivecraft.api.client.data.CloseKeyboardContext;
 import org.vivecraft.api.client.data.OpenKeyboardContext;
 import org.vivecraft.api.client.event.VivecraftClientRegistrationEvent;
-import org.vivecraft.api.client.tracker.TrackerSource;
+import org.vivecraft.api.client.tracker.TrackerSensor;
 import org.vivecraft.api.data.FBTMode;
 import org.vivecraft.api.data.VRBodyPart;
 import org.vivecraft.api.data.VRPose;
@@ -60,15 +60,15 @@ public final class VRClientAPIImpl implements VRClientAPI {
     }
 
     @Override
-    public <T extends TrackerSource> T getTrackerSource(Class<T> sourceClass) {
+    public <T extends TrackerSensor> T getTrackerSensor(Class<T> sourceClass) {
         if (sourceClass == null) return null;
 
         ClientDataHolderVR dh = ClientDataHolderVR.getInstance();
         if (dh == null) return null;
 
         for (Tracker tracker : dh.getTrackers()) {
-            if (sourceClass.isInstance(tracker)) {
-                return sourceClass.cast(tracker);
+            if (tracker instanceof TrackerSensor sensor && sourceClass.isInstance(sensor)) {
+                return sourceClass.cast(sensor);
             }
         }
 

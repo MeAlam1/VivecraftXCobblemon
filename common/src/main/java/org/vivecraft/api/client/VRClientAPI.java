@@ -4,7 +4,7 @@ import org.vivecraft.api.VRAPI;
 import org.vivecraft.api.client.data.CloseKeyboardContext;
 import org.vivecraft.api.client.data.OpenKeyboardContext;
 import org.vivecraft.api.client.event.VivecraftClientRegistrationEvent;
-import org.vivecraft.api.client.tracker.TrackerSource;
+import org.vivecraft.api.client.tracker.TrackerSensor;
 import org.vivecraft.api.data.FBTMode;
 import org.vivecraft.api.data.VRBodyPart;
 import org.vivecraft.api.data.VRPose;
@@ -46,7 +46,7 @@ public interface VRClientAPI {
     void addClientRegistrationHandler(Consumer<VivecraftClientRegistrationEvent> handler) throws IllegalStateException;
 
     /**
-     * Look up a registered {@link TrackerSource} implementation by its class.
+     * Look up a registered {@link TrackerSensor} implementation by its class.
      *
      * <p>Returns the first registered source that is an instance of {@code sourceClass}, or {@code null} if none
      * was found.
@@ -56,7 +56,7 @@ public interface VRClientAPI {
      * @return an instance of {@code T} if available, otherwise {@code null}
      */
     @Nullable
-    <T extends TrackerSource> T getTrackerSource(Class<T> sourceClass);
+    <T extends TrackerSensor> T getTrackerSensor(Class<T> sourceClass);
 
 
     /**

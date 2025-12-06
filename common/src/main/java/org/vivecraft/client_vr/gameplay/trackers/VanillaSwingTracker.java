@@ -21,15 +21,15 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
-import org.vivecraft.api.client.Tracker;
+import org.vivecraft.api.client.VRClientAPI;
+import org.vivecraft.api.client.tracker.TrackerSensor;
 import org.vivecraft.api.client.tracker.swing.SwingContext;
-import org.vivecraft.api.client.tracker.swing.SwingSource;
 import org.vivecraft.api.client.tracker.swing.SwingTracker;
 import org.vivecraft.api.data.VRBodyPart;
 import org.vivecraft.api.utils.VRItemUtils;
 import org.vivecraft.client.network.ClientNetworking;
 import org.vivecraft.client_vr.ClientDataHolderVR;
-import org.vivecraft.client_vr.gameplay.sources.AbstractSwingSource;
+import org.vivecraft.client_vr.gameplay.sources.SwingSensor;
 import org.vivecraft.client_vr.provider.MCVR;
 import org.vivecraft.client_vr.settings.VRSettings;
 import org.vivecraft.common.utils.MathUtils;
@@ -42,7 +42,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * TODO: Cleanup like ive done with {@link AbstractSwingSource}
+ * TODO: Cleanup like ive done with {@link org.vivecraft.client_vr.gameplay.sources.SwingSensor}
  * Vanilla adapter: listens to GeneralSwingTracker and applies vanilla behaviour.
  * Now implements Tracker so it can be registered and will attach/detach to the detector at runtime.
  */
@@ -60,27 +60,13 @@ public class VanillaSwingTracker implements SwingTracker, DebugRenderTracker {
     };
     private final Vec3[] lastBlockHit = new Vec3[4];
     private final AABB[] lastAttackAABB = new AABB[4];
-    private SwingSource swingSource;
+    private TrackerSensor swingSensor;
 
     private int disableSwing = 3;
 
     public VanillaSwingTracker(Minecraft mc, ClientDataHolderVR dh) {
         this.mc = mc;
         this.dh = dh;
-    }
-
-    public void attach(SwingSource source) {
-        if (this.swingSource == source) return;
-        if (this.swingSource != null) this.swingSource.removeListener(this);
-        this.swingSource = source;
-        if (this.swingSource != null) this.swingSource.addListener(this);
-    }
-
-    public void detach() {
-        if (this.swingSource != null) {
-            this.swingSource.removeListener(this);
-            this.swingSource = null;
-        }
     }
 
     @Override
@@ -356,13 +342,13 @@ public class VanillaSwingTracker implements SwingTracker, DebugRenderTracker {
 
     @Override
     public void activeProcess(@Nullable LocalPlayer player) {
-        if (this.swingSource == null && this.dh != null) {
-            for (Tracker t : this.dh.getTrackers()) {
-                if (t instanceof SwingSource src) {
-                    attach(src);
-                    break;
-                }
-            }
+        if (this.swingSensor == null && this.dh != null) {
+            SwingSensor source = VRClientAPI.instance().getTrackerSensor(SwingSensor.class);
+            if (source == null) return;
+            if (this.swingSensor == source) return;
+            if (this.swingSensor != null) this.swingSensor.removeListener(this);
+            this.swingSensor = source;
+            this.swingSensor.addListener(this);
         }
     }
 
@@ -374,7 +360,10 @@ public class VanillaSwingTracker implements SwingTracker, DebugRenderTracker {
             this.lastBlockHit[i] = null;
             this.lastAttackAABB[i] = null;
         }
-        detach();
+        if (this.swingSensor != null) {
+            this.swingSensor.removeListener(this);
+            this.swingSensor = null;
+        }
     }
 
 

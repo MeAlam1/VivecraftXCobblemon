@@ -5,8 +5,9 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
+import org.vivecraft.api.client.Tracker;
+import org.vivecraft.api.client.tracker.TrackerSensor;
 import org.vivecraft.api.client.tracker.swing.SwingContext;
-import org.vivecraft.api.client.tracker.swing.SwingSource;
 import org.vivecraft.api.client.tracker.swing.SwingTracker;
 import org.vivecraft.api.data.FBTMode;
 import org.vivecraft.api.data.VRBodyPart;
@@ -35,7 +36,7 @@ import java.util.*;
  *   <li>The tracker is designed to be polled once per client tick (see {@link #processType}).</li>
  * </ul>
  */
-public class AbstractSwingSource implements DebugRenderTracker, SwingSource {
+public class SwingSensor implements DebugRenderTracker, TrackerSensor {
     /**
      * Default speed threshold (m/s) used to determine an impact on a swing.
      * This value is scaled by game state (creative) and hand bias when applied.
@@ -97,7 +98,7 @@ public class AbstractSwingSource implements DebugRenderTracker, SwingSource {
      * @param minecraft  Minecraft client instance.
      * @param clientData Client-side VR state holder providing device poses and settings.
      */
-    public AbstractSwingSource(Minecraft minecraft, ClientDataHolderVR clientData) {
+    public SwingSensor(Minecraft minecraft, ClientDataHolderVR clientData) {
         this.minecraft = minecraft;
         this.clientData = clientData;
 
@@ -113,8 +114,9 @@ public class AbstractSwingSource implements DebugRenderTracker, SwingSource {
      *
      * @param tracker listener to notify; duplicates are ignored.
      */
-    public void addListener(SwingTracker tracker) {
-        if (!swingListeners.contains(tracker)) swingListeners.add(tracker);
+    public void addListener(Tracker tracker) {
+        if (!(tracker instanceof SwingTracker)) return;
+        if (!swingListeners.contains(tracker)) swingListeners.add((SwingTracker) tracker);
     }
 
     /**
@@ -122,7 +124,8 @@ public class AbstractSwingSource implements DebugRenderTracker, SwingSource {
      *
      * @param tracker listener to remove; no-op if not registered.
      */
-    public void removeListener(SwingTracker tracker) {
+    public void removeListener(Tracker tracker) {
+        if (!(tracker instanceof SwingTracker)) return;
         swingListeners.remove(tracker);
     }
 
