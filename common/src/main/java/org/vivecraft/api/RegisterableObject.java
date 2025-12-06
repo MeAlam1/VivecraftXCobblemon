@@ -1,9 +1,14 @@
 package org.vivecraft.api;
 
+import org.vivecraft.api.client.Tracker;
+import org.vivecraft.api.client.InteractModule;
+
 /**
- * An object that can be registered with Vivecraft. This should not be directly implemented by API-users, but rather
- * interfaces that extend this one, such as {@link org.vivecraft.api.client.Tracker} should be instead. These can be
- * registered using {@link VRAPI#register(RegisterableObject...)}.
+ * Marker interface for objects that can be registered with Vivecraft.
+ * <p>
+ * This interface is not meant to be implemented directly.
+ * Instead, Vivecraft provides specific sub-interfaces (for example,
+ * {@link Tracker}, {@link InteractModule}, …).
  */
 public interface RegisterableObject {
 }

@@ -20,6 +20,7 @@ import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.BiConsumer;
 
 public final class VRAPIImpl implements VRAPI {
 
@@ -28,6 +29,18 @@ public final class VRAPIImpl implements VRAPI {
 
     private final Map<UUID, VRPoseHistoryImpl> clientPoseHistories = new HashMap<>();
     private final Map<UUID, VRPoseHistoryImpl> serverPoseHistories = new HashMap<>();
+
+    private static final Map<Class<?>, BiConsumer<ClientDataHolderVR, RegisterableObject>> REGISTER = Map.of(
+        Tracker.class, (vr, object) -> vr.registerTracker((Tracker) object),
+        InteractModule.class, (vr, object) -> vr.interactTracker.registerModules((InteractModule) object),
+        SwingListener.class, (vr, object) -> vr.swingSensor.addListener((SwingListener) object)
+    );
+
+    private static final Map<Class<?>, BiConsumer<ClientDataHolderVR, RegisterableObject>> UNREGISTER = Map.of(
+        Tracker.class, (vr, object) -> vr.unregisterTracker((Tracker) object),
+        InteractModule.class, (vr, object) -> vr.interactTracker.unregisterModules((InteractModule) object),
+        SwingListener.class, (vr, object) -> vr.swingSensor.removeListener((SwingListener) object)
+    );
 
     private VRAPIImpl() {
     }
@@ -86,43 +99,46 @@ public final class VRAPIImpl implements VRAPI {
     }
 
     @Override
-    public void register(RegisterableObject... registerableObjects) {
-        for (RegisterableObject registerableObject : registerableObjects) {
-            boolean registeredSomewhere = false; // Used to guide devs using the API incorrectly
-            if (registerableObject instanceof Tracker tracker) {
-                ClientDataHolderVR.getInstance().registerTracker(tracker);
-                registeredSomewhere = true;
-            }
-            if (registerableObject instanceof InteractModule interactModule) {
-                ClientDataHolderVR.getInstance().interactTracker.registerModules(interactModule);
-                registeredSomewhere = true;
-            }
-            if (registerableObject instanceof SwingListener swingListener) {
-                ClientDataHolderVR.getInstance().swingSensor.addListener(swingListener);
-                registeredSomewhere = true;
-            }
+    public void register(RegisterableObject... objects) {
+        var vr = ClientDataHolderVR.getInstance();
 
-            if (!registeredSomewhere) {
-                throw new IllegalArgumentException("An instance of %s was provided but had nowhere to be registered.".formatted(registerableObject.getClass()));
+        for (RegisterableObject obj : objects) {
+            if (!tryRegister(obj, vr)) {
+                throw new IllegalArgumentException(
+                    "An instance of %s was provided but had nowhere to be registered."
+                        .formatted(obj.getClass())
+                );
+            }
+        }
+    }
+
+    private boolean tryRegister(RegisterableObject obj, ClientDataHolderVR vr) {
+        boolean matched = false;
+
+        for (var entry : REGISTER.entrySet()) {
+            if (entry.getKey().isInstance(obj)) {
+                entry.getValue().accept(vr, obj);
+                matched = true;
             }
         }
 
+        return matched;
     }
+
 
     @Override
-    public void unregister(RegisterableObject... registerableObjects) {
-        for (RegisterableObject registerableObject : registerableObjects) {
-            if (registerableObject instanceof Tracker tracker) {
-                ClientDataHolderVR.getInstance().unregisterTracker(tracker);
-            }
-            if (registerableObject instanceof InteractModule interactModule) {
-                ClientDataHolderVR.getInstance().interactTracker.unregisterModules(interactModule);
-            }
-            if (registerableObject instanceof SwingListener swingListener) {
-                ClientDataHolderVR.getInstance().swingSensor.removeListener(swingListener);
+    public void unregister(RegisterableObject... objects) {
+        var vr = ClientDataHolderVR.getInstance();
+
+        for (RegisterableObject obj : objects) {
+            for (var entry : UNREGISTER.entrySet()) {
+                if (entry.getKey().isInstance(obj)) {
+                    entry.getValue().accept(vr, obj);
+                }
             }
         }
     }
+
 
     private Map<UUID, VRPoseHistoryImpl> getMap(boolean isClientSide) {
         return isClientSide ? this.clientPoseHistories : this.serverPoseHistories;

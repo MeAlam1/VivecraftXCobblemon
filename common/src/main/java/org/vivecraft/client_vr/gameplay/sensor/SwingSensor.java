@@ -1,21 +1,16 @@
-package org.vivecraft.client_vr.gameplay.sources;
+package org.vivecraft.client_vr.gameplay.sensor;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
-import org.apache.commons.lang3.tuple.Pair;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
-import org.joml.Vector3fc;
 import org.vivecraft.api.client.tracker.swing.SwingContext;
 import org.vivecraft.api.client.tracker.swing.SwingListener;
 import org.vivecraft.api.data.FBTMode;
 import org.vivecraft.api.data.VRBodyPart;
 import org.vivecraft.client_vr.ClientDataHolderVR;
-import org.vivecraft.client_vr.VRData;
 import org.vivecraft.client_vr.gameplay.trackers.DebugRenderTracker;
-import org.vivecraft.client_vr.render.helpers.DebugRenderHelper;
 import org.vivecraft.client_vr.settings.VRSettings;
 import org.vivecraft.common.utils.MathUtils;
 

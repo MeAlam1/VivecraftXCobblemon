@@ -14,7 +14,6 @@ import org.vivecraft.client_vr.provider.ControllerType;
 import org.vivecraft.client_vr.render.VRFirstPersonArmSwing;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class InteractTracker implements DebugRenderTracker {

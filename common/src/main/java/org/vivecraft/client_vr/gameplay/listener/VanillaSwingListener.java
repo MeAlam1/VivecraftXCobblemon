@@ -1,4 +1,4 @@
-package org.vivecraft.client_vr.gameplay.trackers;
+package org.vivecraft.client_vr.gameplay.listener;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
@@ -27,6 +27,7 @@ import org.vivecraft.api.data.VRBodyPart;
 import org.vivecraft.api.utils.VRItemUtils;
 import org.vivecraft.client.network.ClientNetworking;
 import org.vivecraft.client_vr.ClientDataHolderVR;
+import org.vivecraft.client_vr.gameplay.sensor.SwingSensor;
 import org.vivecraft.client_vr.provider.MCVR;
 import org.vivecraft.common.utils.MathUtils;
 import org.vivecraft.data.ViveBlockTags;
@@ -37,8 +38,8 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * TODO: Cleanup like ive done with {@link org.vivecraft.client_vr.gameplay.sources.SwingSensor}
- * Vanilla adapter: listens to {@link org.vivecraft.client_vr.gameplay.sources.SwingSensor} and applies vanilla behaviour.
+ * TODO: Cleanup like ive done with {@link SwingSensor}
+ * Vanilla adapter: listens to {@link SwingSensor} and applies vanilla behaviour.
  */
 public class VanillaSwingListener implements SwingListener {
     private static final VRBodyPart[] BODYPARTS = new VRBodyPart[]{

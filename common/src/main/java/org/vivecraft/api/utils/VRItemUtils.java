@@ -65,7 +65,7 @@ public class VRItemUtils {
             fade = 0.75F;
         }
 
-        /* TODO: Update to GeneralSwingTracker
+        /* TODO: Update to VanillaSwingListener
         if (ClientDataHolderVR.getInstance().swingTracker.lastWeaponSolid[ClientDataHolderVR.getInstance().isMainHand ?
             0 : 1])
         {
