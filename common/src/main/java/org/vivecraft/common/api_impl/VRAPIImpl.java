@@ -99,7 +99,7 @@ public final class VRAPIImpl implements VRAPI {
     }
 
     @Override
-    public void register(RegisterableObject... objects) {
+    public VRAPI register(RegisterableObject... objects) {
         var vr = ClientDataHolderVR.getInstance();
 
         for (RegisterableObject obj : objects) {
@@ -110,6 +110,7 @@ public final class VRAPIImpl implements VRAPI {
                 );
             }
         }
+        return VRAPI.instance();
     }
 
     private boolean tryRegister(RegisterableObject obj, ClientDataHolderVR vr) {
@@ -127,7 +128,7 @@ public final class VRAPIImpl implements VRAPI {
 
 
     @Override
-    public void unregister(RegisterableObject... objects) {
+    public VRAPI unregister(RegisterableObject... objects) {
         var vr = ClientDataHolderVR.getInstance();
 
         for (RegisterableObject obj : objects) {
@@ -137,6 +138,7 @@ public final class VRAPIImpl implements VRAPI {
                 }
             }
         }
+        return VRAPI.instance();
     }
 
 

@@ -70,7 +70,7 @@ public interface VRAPI {
      *                            IllegalArgumentException.
      * @throws IllegalArgumentException If one or more provided objects are null or have nowhere to be registered to.
      */
-    void register(RegisterableObject... registerableObjects);
+    VRAPI register(RegisterableObject... registerableObjects);
 
     /**
      * Unregister one or more registerable objects, such as {@link org.vivecraft.api.client.Tracker}s,
@@ -80,5 +80,5 @@ public interface VRAPI {
      * @param registerableObjects One or more registerable objects to register. Objects not already registered are
      *                            silently ignored.
      */
-    void unregister(RegisterableObject... registerableObjects);
+    VRAPI unregister(RegisterableObject... registerableObjects);
 }
